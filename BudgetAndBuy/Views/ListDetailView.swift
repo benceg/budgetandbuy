@@ -149,6 +149,9 @@ struct ListDetailView: View {
         .sheet(item: $finishedTrip) { finished in
             TripSummaryView(trip: finished.trip)
         }
+        .onChange(of: liveActivityState, initial: true) { _, state in
+            ShoppingActivityController.shared.sync(liveActivityAttributes, state: state)
+        }
         #if DEBUG
         .task {
             if DebugLaunch.opensComparison { isComparing = true }
@@ -162,6 +165,27 @@ struct ListDetailView: View {
         } message: {
             Text("This will delete everything on the list.")
         }
+    }
+
+    /// What the Live Activity shows, or nil when you're not shopping from this list.
+    private var liveActivityState: ShoppingActivityAttributes.ContentState? {
+        guard let shoppingStore, !items.isEmpty else { return nil }
+        let toBuyInOrder = aisles?.flatMap(\.items) ?? toBuy
+        return ShoppingActivityAttributes.ContentState(
+            basketMinor: StoreTotal(items: inBasket, at: shoppingStore).amountMinor,
+            basketCount: inBasket.count,
+            remainingCount: toBuy.count,
+            upNext: toBuyInOrder.prefix(3).map(\.displayName)
+        )
+    }
+
+    private var liveActivityAttributes: ShoppingActivityAttributes {
+        ShoppingActivityAttributes(
+            listID: list.objectID.uriRepresentation().absoluteString,
+            listName: list.name ?? "",
+            storeName: shoppingStore?.name ?? "",
+            colorName: list.colorName ?? "green"
+        )
     }
 
     private var subtitle: String {
