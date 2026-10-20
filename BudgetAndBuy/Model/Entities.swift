@@ -62,6 +62,8 @@ final class Product: NSManagedObject, Timestamped {
     @NSManaged var sizeAmount: Double
     @NSManaged var sizeUnit: String?
     @NSManaged var categoryID: String?
+    /// A GroceryIcon raw value; empty once looked for and none fits.
+    @NSManaged var iconID: String?
     @NSManaged var household: Household?
     @NSManaged var items: Set<Item>?
     @NSManaged var prices: Set<Price>?

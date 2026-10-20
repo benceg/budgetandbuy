@@ -60,14 +60,17 @@ extension Household {
 }
 
 extension ShoppingList {
-    /// Adds a product to the list, reading a size off the name ("Milk 2L").
-    /// Adding something already on the list bumps its quantity; adding
-    /// something already in the basket puts it back.
+    /// Adds a product to the list, reading a size off the name ("Milk 2L"),
+    /// with its aisle and icon if the catalogue knows it. Adding something
+    /// already on the list bumps its quantity; adding something already in
+    /// the basket puts it back.
     @discardableResult
     func addItem(named rawName: String) -> Item? {
         let (name, size) = ProductSize.split(rawName)
         guard let household, !name.isEmpty else { return nil }
-        return add(household.product(named: name, size: size))
+        let product = household.product(named: name, size: size)
+        product.fillInFromCatalogue()
+        return add(product)
     }
 
     @discardableResult

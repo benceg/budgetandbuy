@@ -16,6 +16,7 @@ struct ItemEditor: View {
     @State private var sizeUnit: ProductSize.Unit?
     @State private var quantity: Int
     @State private var category: ProductCategory?
+    @State private var icon: GroceryIcon?
 
     init(item: Item) {
         self.item = item
@@ -25,6 +26,7 @@ struct ItemEditor: View {
         _sizeUnit = State(initialValue: size?.unit)
         _quantity = State(initialValue: Int(item.quantity))
         _category = State(initialValue: item.product?.category)
+        _icon = State(initialValue: item.product?.icon)
     }
 
     private var trimmedName: String { ProductName.display(name) }
@@ -75,6 +77,18 @@ struct ItemEditor: View {
                             .tag(Optional(category))
                         }
                     }
+                    NavigationLink {
+                        IconPicker(selection: $icon, category: category)
+                    } label: {
+                        LabeledContent("Icon") {
+                            if let icon {
+                                Image(icon.imageName)
+                                    .font(.title3)
+                            } else {
+                                Text("Aisle Icon")
+                            }
+                        }
+                    }
                 }
             }
             .navigationTitle("Item Details")
@@ -98,12 +112,17 @@ struct ItemEditor: View {
         if product != previous {
             item.product = product
             item.list?.mergeDuplicateItems()
+            product.fillInFromCatalogue()
         }
         if category != previous?.category || product.category == nil {
             product.category = category
         }
+        if icon != previous?.icon {
+            product.icon = icon
+        }
         item.quantity = Int16(quantity)
         context.saveIfNeeded()
+        ProductCategorizer.shared.categorize([product])
         dismiss()
     }
 }

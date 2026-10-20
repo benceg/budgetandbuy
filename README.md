@@ -16,5 +16,17 @@ Open `BudgetAndBuy.xcodeproj` in Xcode 27 or later. The first time you run on a 
 - **Item** is a product on a particular list, with a quantity and whether it's in the basket.
 - Core Data mirrors a private store (households you own) and a shared store (households shared with you) to CloudKit. CloudKit requires every attribute to be optional or defaulted and every relationship to have an inverse.
 - Devices that create data before their first sync can produce duplicate households or products. `Deduplication.swift` merges them deterministically on every remote change.
+- `GroceryCatalogue.swift` lists everyday items with their aisle and icon. Items it recognises get both straight away; anything else is sorted by Apple's on-device model, choosing from the aisle's icons.
+
+## Product icons
+
+Product icons are custom SF Symbols adapted from free icon sets (mostly Hugeicons; all MIT, ISC or Apache 2.0). `Tools/Icons/icons.json` says where each one comes from. To rebuild them after changing that file:
+
+```sh
+brew install swiftdraw
+python3 Tools/Icons/build.py
+```
+
+The script writes `Assets.xcassets/Grocery Icons` and `Resources/Icon Licences.txt`, which must ship with the app.
 
 Before the first App Store release, deploy the CloudKit schema from Development to Production in the CloudKit Console.

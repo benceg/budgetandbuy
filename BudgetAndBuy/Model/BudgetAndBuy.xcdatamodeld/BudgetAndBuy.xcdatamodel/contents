@@ -21,6 +21,7 @@
     <entity name="Product" representedClassName="Product" syncable="YES">
         <attribute name="categoryID" optional="YES" attributeType="String"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="iconID" optional="YES" attributeType="String"/>
         <attribute name="name" optional="YES" attributeType="String"/>
         <attribute name="normalizedName" optional="YES" attributeType="String"/>
         <attribute name="sizeAmount" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>

@@ -53,14 +53,24 @@ struct ListDetailView: View {
         items.filter(\.isChecked).sorted { ($0.checkedAt ?? .distantPast) > ($1.checkedAt ?? .distantPast) }
     }
 
-    private var suggestions: [Product] {
+    /// The household's own products first, then everyday things it hasn't bought yet.
+    private var suggestions: [Suggestion] {
+        guard let household = list.household else { return [] }
         let onList = Set(toBuy.compactMap(\.product))
         let typed = ProductSize.split(newItemName)
         let typedKey = ProductName.normalized(typed.name)
-        return list.household?.products(matching: typed.name, limit: 6)
+        let products = household.products(matching: typed.name, limit: 8)
+        let known = Set(products.compactMap(\.normalizedName))
+        let fromHousehold = products
             .filter { !onList.contains($0) && !$0.matches(normalizedName: typedKey, size: typed.size) }
-            .prefix(3)
-            .map(\.self) ?? []
+            .map(Suggestion.product)
+        let fromCatalogue = GroceryCatalogue.entries(matching: typed.name, limit: 8)
+            .filter { entry in
+                let key = ProductName.normalized(entry.name)
+                return key != typedKey && !known.contains(key)
+            }
+            .map(Suggestion.catalogue)
+        return Array((fromHousehold + fromCatalogue).prefix(4))
     }
 
     /// Aisle sections, once at least one item has an aisle.
@@ -89,14 +99,20 @@ struct ListDetailView: View {
                     }
                 }
                 newItemRow
-                ForEach(suggestions, id: \.objectID) { product in
+                ForEach(suggestions) { suggestion in
                     Button {
-                        list.add(product)
-                        context.saveIfNeeded()
-                        newItemName = ""
+                        add(suggestion)
                     } label: {
-                        Label(product.title, systemImage: "plus.circle")
-                            .foregroundStyle(list.color)
+                        HStack(spacing: 12) {
+                            Image(systemName: "plus.circle")
+                                .font(.title2)
+                            suggestion.icon
+                                .font(.title3)
+                                .foregroundStyle(.secondary)
+                                .frame(width: 28)
+                            Text(suggestion.title)
+                        }
+                        .foregroundStyle(list.color)
                     }
                 }
             } footer: {
@@ -339,6 +355,17 @@ struct ListDetailView: View {
         isAddingItem = true
     }
 
+    private func add(_ suggestion: Suggestion) {
+        switch suggestion {
+        case .product(let product):
+            list.add(product)
+        case .catalogue(let entry):
+            list.addItem(named: entry.name)
+        }
+        context.saveIfNeeded()
+        newItemName = ""
+    }
+
     private func clearBasket() {
         for item in inBasket {
             context.delete(item)
@@ -350,6 +377,39 @@ struct ListDetailView: View {
         dismiss()
         context.delete(list)
         context.saveIfNeeded()
+    }
+}
+
+private enum Suggestion: Identifiable {
+    case product(Product)
+    case catalogue(GroceryCatalogue.Entry)
+
+    var id: String {
+        switch self {
+        case .product(let product): product.objectID.uriRepresentation().absoluteString
+        case .catalogue(let entry): "catalogue:\(entry.name)"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .product(let product): product.title
+        case .catalogue(let entry): entry.name
+        }
+    }
+
+    @MainActor @ViewBuilder
+    var icon: some View {
+        switch self {
+        case .product(let product):
+            ProductIcon(product: product)
+        case .catalogue(let entry):
+            if let icon = entry.icon {
+                Image(icon.imageName)
+            } else {
+                Image(systemName: entry.category.symbolName)
+            }
+        }
     }
 }
 
@@ -379,6 +439,10 @@ private struct ItemRow: View {
                     .font(.title2)
                     .foregroundStyle(item.isChecked ? tint : Color(.tertiaryLabel))
                     .contentTransition(.symbolEffect(.replace))
+                ProductIcon(product: item.product)
+                    .font(.title3)
+                    .foregroundStyle(item.isChecked ? .tertiary : .secondary)
+                    .frame(width: 28)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(item.product?.name ?? "")
                         .foregroundStyle(item.isChecked ? .secondary : .primary)

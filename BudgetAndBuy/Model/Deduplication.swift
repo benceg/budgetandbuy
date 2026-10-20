@@ -34,6 +34,7 @@ extension Household {
             let keeper = sorted[0]
             for duplicate in sorted.dropFirst() {
                 if keeper.categoryID == nil { keeper.categoryID = duplicate.categoryID }
+                if keeper.iconID == nil { keeper.iconID = duplicate.iconID }
                 for item in duplicate.items ?? [] { item.product = keeper }
                 for price in duplicate.prices ?? [] { price.product = keeper }
                 // Deleting a product cascades to its prices; detach the moved ones first.
