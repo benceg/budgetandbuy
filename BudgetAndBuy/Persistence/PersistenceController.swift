@@ -175,6 +175,12 @@ extension PersistenceController {
             aldi.recordPrice(Int64(aldiPrice), for: product)
             coop.recordPrice(Int64(coopPrice), for: product)
         }
+        coop.recordPrice(325, for: household.product(named: "Free-range eggs"))
+        #if DEBUG
+        if DebugLaunch.usesSampleData {
+            UserDefaults.standard.set(coop.uuid?.uuidString, forKey: "shoppingStoreID")
+        }
+        #endif
 
         controller.viewContext.saveIfNeeded()
         return controller

@@ -12,6 +12,7 @@ struct ListsView: View {
     @State private var isAddingStore = false
     @State private var isShowingHousehold = false
     @State private var listPendingDeletion: ShoppingList?
+    @State private var path = NavigationPath()
 
     init(household: Household, households: [Household], selectedID: Binding<String>) {
         self.household = household
@@ -30,7 +31,7 @@ struct ListsView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 if !lists.isEmpty {
                     Section("Lists") {
@@ -105,6 +106,11 @@ struct ListsView: View {
                     }
                 }
             }
+            #if DEBUG
+            .task {
+                if DebugLaunch.opensFirstList, let first = lists.first { path.append(first) }
+            }
+            #endif
             .sheet(isPresented: $isAddingList) {
                 ListEditor(household: household)
             }

@@ -18,6 +18,7 @@ struct ListDetailView: View {
     @State private var isConfirmingClear = false
     @State private var isConfirmingDeletion = false
     @State private var isAddingStore = false
+    @State private var isComparing = false
     @State private var pricing: PricingTarget?
 
     init(list: ShoppingList) {
@@ -77,9 +78,15 @@ struct ListDetailView: View {
             } footer: {
                 if let shoppingStore, !toBuy.isEmpty {
                     let total = StoreTotal(items: toBuy, at: shoppingStore)
-                    if total.pricedCount > 0 {
-                        Text("About \(Money.format(total.amountMinor)) for \(total.pricedCount) of \(total.itemCount) items at \(shoppingStore.name ?? "")")
+                    Group {
+                        if total.pricedCount == total.itemCount {
+                            Text("About \(Money.format(total.amountMinor)) at \(shoppingStore.name ?? "")")
+                        } else if total.pricedCount > 0 {
+                            Text("About \(Money.format(total.amountMinor)) for \(total.pricedCount) of \(total.itemCount) items at \(shoppingStore.name ?? "")")
+                        }
                     }
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
                 }
             }
 
@@ -109,6 +116,14 @@ struct ListDetailView: View {
         .sheet(item: $pricing) { target in
             PriceSheet(target: target)
         }
+        .sheet(isPresented: $isComparing) {
+            CompareView(list: list)
+        }
+        #if DEBUG
+        .task {
+            if DebugLaunch.opensComparison { isComparing = true }
+        }
+        #endif
         .confirmationDialog("Clear the basket?", isPresented: $isConfirmingClear, titleVisibility: .visible) {
             Button("Clear \(inBasket.count) Items", role: .destructive, action: clearBasket)
         }
@@ -173,12 +188,18 @@ struct ListDetailView: View {
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
+        if stores.count > 1 && !isAddingItem {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Compare Stores", systemImage: "chart.bar.xaxis") { isComparing = true }
+            }
+        }
         ToolbarItem(placement: .topBarTrailing) {
             if isAddingItem {
                 Button("Done") { isAddingItem = false }
             } else {
                 Menu("More", systemImage: "ellipsis") {
                     Button("Show List Info", systemImage: "info.circle") { isEditingInfo = true }
+                    Button("Compare Stores", systemImage: "chart.bar.xaxis") { isComparing = true }
                     Button("Clear Basket", systemImage: "basket") { isConfirmingClear = true }
                         .disabled(inBasket.isEmpty)
                     Divider()

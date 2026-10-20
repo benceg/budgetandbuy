@@ -6,8 +6,7 @@ struct BudgetAndBuyApp: App {
     @UIApplicationDelegateAdaptor private var appDelegate: AppDelegate
 
     #if DEBUG
-    // Launch with -sampleData to explore the UI with the in-memory preview data.
-    private let persistence = ProcessInfo.processInfo.arguments.contains("-sampleData")
+    private let persistence = DebugLaunch.usesSampleData
         ? PersistenceController.preview
         : PersistenceController.shared
     #else
@@ -22,6 +21,18 @@ struct BudgetAndBuyApp: App {
         }
     }
 }
+
+#if DEBUG
+/// Launch arguments for exploring the UI in the simulator:
+/// -sampleData uses in-memory sample data, shopping at the Co-op;
+/// -openFirstList opens the first list; -compare then opens Compare Stores.
+enum DebugLaunch {
+    private static let arguments = ProcessInfo.processInfo.arguments
+    static let usesSampleData = arguments.contains("-sampleData")
+    static let opensFirstList = arguments.contains("-openFirstList")
+    static let opensComparison = arguments.contains("-compare")
+}
+#endif
 
 struct RootView: View {
     @Environment(\.managedObjectContext) private var context
