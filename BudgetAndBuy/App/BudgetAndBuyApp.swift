@@ -24,15 +24,22 @@ struct BudgetAndBuyApp: App {
 
 #if DEBUG
 /// Launch arguments for exploring the UI in the simulator:
-/// -sampleData uses in-memory sample data, shopping at the Co-op;
-/// -openFirstList opens the first list; -compare then opens Compare Stores;
-/// -openStats opens Savings.
+/// -sampleData uses in-memory sample data (-shopping: shopping at the Co-op) and skips
+/// the introduction unless -onboarding is also passed; -tab shops|savings|household
+/// picks a tab; -openFirstList opens the first list; -page plan|budget picks
+/// its page; -openItem opens its first item; -addShop opens Add a Shop;
+/// -onboardingStep 1…3 opens the introduction at a later step.
 enum DebugLaunch {
     private static let arguments = ProcessInfo.processInfo.arguments
     static let usesSampleData = arguments.contains("-sampleData")
+    static let showsOnboarding = arguments.contains("-onboarding")
+    static let isShopping = arguments.contains("-shopping")
+    static let onboardingStep = UserDefaults.standard.integer(forKey: "onboardingStep")
     static let opensFirstList = arguments.contains("-openFirstList")
-    static let opensComparison = arguments.contains("-compare")
-    static let opensStats = arguments.contains("-openStats")
+    static let opensFirstItem = arguments.contains("-openItem")
+    static let opensAddShop = arguments.contains("-addShop")
+    static let tab = UserDefaults.standard.string(forKey: "tab").flatMap(AppTab.init(rawValue:))
+    static let page = UserDefaults.standard.string(forKey: "page").flatMap(ListPage.init(rawValue:))
 }
 #endif
 
@@ -42,6 +49,7 @@ struct RootView: View {
     private var households: FetchedResults<Household>
     @AppStorage("selectedHouseholdID") private var selectedID = ""
     @AppStorage("knownSharedHouseholdIDs") private var knownSharedIDs = ""
+    @AppStorage(OnboardingView.completedKey) private var hasCompletedOnboarding = false
     @State private var joinedHousehold: Household?
 
     private var ownHousehold: Household? {
@@ -51,12 +59,24 @@ struct RootView: View {
     var body: some View {
         Group {
             if let household = HouseholdSelection.preferred(from: Array(households), selectedID: selectedID) {
-                ListsView(household: household, households: Array(households), selectedID: $selectedID)
+                MainTabView(household: household, households: Array(households), selectedHouseholdID: $selectedID)
                     .id(household.objectID)
+                    .fullScreenCover(isPresented: Binding(
+                        get: { !hasCompletedOnboarding },
+                        set: { if !$0 { hasCompletedOnboarding = true } }
+                    )) {
+                        OnboardingView(household: household)
+                    }
             } else {
                 ProgressView()
             }
         }
+        .background(Color.canvas.ignoresSafeArea())
+        #if DEBUG
+        .onAppear {
+            if DebugLaunch.usesSampleData { hasCompletedOnboarding = !DebugLaunch.showsOnboarding }
+        }
+        #endif
         .onChange(of: households.map(\.objectID), initial: true) {
             noticeJoinedHouseholds()
         }
@@ -77,7 +97,7 @@ struct RootView: View {
             }
             Button("Keep Separate", role: .cancel) {}
         } message: { _ in
-            Text("Everyone in the household will be able to see and edit them. You can switch between households from the title on the Lists screen.")
+            Text("Everyone in the household will be able to see and edit them. You can switch between households from the title on the Lists tab.")
         }
     }
 

@@ -5,6 +5,7 @@ import SwiftUI
 struct ListEditor: View {
     private let household: Household?
     private let list: ShoppingList?
+    private var onCreate: (ShoppingList) -> Void = { _ in }
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var context
@@ -13,8 +14,9 @@ struct ListEditor: View {
     @State private var symbolName: String
     @FocusState private var isNameFocused: Bool
 
-    init(household: Household) {
+    init(household: Household, onCreate: @escaping (ShoppingList) -> Void = { _ in }) {
         self.household = household
+        self.onCreate = onCreate
         list = nil
         _name = State(initialValue: "")
         _colorName = State(initialValue: "green")
@@ -40,9 +42,9 @@ struct ListEditor: View {
                         TextField("List Name", text: $name)
                             .font(.title2.bold())
                             .multilineTextAlignment(.center)
-                            .foregroundStyle(ListAppearance.color(named: colorName))
+                            .foregroundStyle(Color.ink)
                             .padding(.vertical, 12)
-                            .background(Color(.tertiarySystemFill), in: .rect(cornerRadius: 12))
+                            .background(Color.sunken, in: .rect(cornerRadius: 14))
                             .focused($isNameFocused)
                             .submitLabel(.done)
                             .onSubmit(save)
@@ -50,6 +52,7 @@ struct ListEditor: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
                 }
+                .onSurface()
 
                 Section {
                     SwatchGrid(items: ListAppearance.colorNames, selection: $colorName) { name in
@@ -58,6 +61,7 @@ struct ListEditor: View {
                             .accessibilityLabel(name.capitalized)
                     }
                 }
+                .onSurface()
 
                 Section {
                     SwatchGrid(items: ListAppearance.symbolNames, selection: $symbolName) { name in
@@ -65,11 +69,13 @@ struct ListEditor: View {
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(Color(.tertiarySystemFill), in: .circle)
+                            .background(Color.sunken, in: .circle)
                     }
                 }
+                .onSurface()
             }
-            .navigationTitle(list == nil ? "New List" : "List Info")
+            .themedList()
+            .navigationTitle(list == nil ? "New List" : "Edit List")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -93,6 +99,7 @@ struct ListEditor: View {
         target.symbolName = symbolName
         context.saveIfNeeded()
         dismiss()
+        if list == nil { onCreate(target) }
     }
 }
 
@@ -113,7 +120,7 @@ struct SwatchGrid<Swatch: View>: View {
                         .padding(4)
                         .overlay {
                             if item == selection {
-                                Circle().strokeBorder(Color(.systemGray3), lineWidth: 3)
+                                Circle().strokeBorder(Color.ink.opacity(0.35), lineWidth: 3)
                             }
                         }
                 }
@@ -124,9 +131,4 @@ struct SwatchGrid<Swatch: View>: View {
         .padding(.vertical, 6)
         .sensoryFeedback(.selection, trigger: selection)
     }
-}
-
-#Preview {
-    ListEditor(household: PersistenceController.preview.ensureHousehold())
-        .environment(\.managedObjectContext, PersistenceController.preview.viewContext)
 }

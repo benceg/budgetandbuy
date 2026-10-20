@@ -1,4 +1,5 @@
 import CloudKit
+import CoreLocation
 import CoreData
 import os
 
@@ -146,6 +147,8 @@ extension PersistenceController {
 
         let weekly = household.addList()
         weekly.name = "Weekly Shop"
+        weekly.budgetMinor = 5_000
+        household.monthlyBudgetMinor = 40_000
         for (name, category) in [
             ("Semi-skimmed milk 4 pints", ProductCategory.dairyAndEggs), ("Sourdough 800g", .bakery), ("Bananas", .fruitAndVeg),
             ("Free-range eggs 6 pack", .dairyAndEggs), ("Cheddar 400g", .dairyAndEggs),
@@ -166,11 +169,14 @@ extension PersistenceController {
         aldi.colorName = "blue"
         aldi.travelMinutes = 20
         aldi.distanceKm = 14
+        aldi.coordinate = CLLocationCoordinate2D(latitude: 51.4881, longitude: -0.0489)
         let coop = household.addStore()
         coop.name = "Co-op"
         coop.colorName = "teal"
         coop.travel = .walk
         coop.travelMinutes = 4
+        coop.distanceKm = 0.3
+        coop.coordinate = CLLocationCoordinate2D(latitude: 51.4985, longitude: -0.0627)
         for (name, aldiPrice, coopPrice) in [
             ("Semi-skimmed milk 4 pints", 145, 175), ("Sourdough 800g", 129, 250), ("Bananas", 17, 25), ("Cheddar 400g", 299, 425),
         ] {
@@ -199,7 +205,7 @@ extension PersistenceController {
         }
         #if DEBUG
         if DebugLaunch.usesSampleData {
-            UserDefaults.standard.set(coop.uuid?.uuidString, forKey: "shoppingStoreID")
+            UserDefaults.standard.set(DebugLaunch.isShopping ? coop.uuid?.uuidString : "", forKey: "shoppingStoreID")
         }
         #endif
 

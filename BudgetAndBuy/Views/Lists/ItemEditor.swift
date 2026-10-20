@@ -43,6 +43,7 @@ struct ItemEditor: View {
                 Section {
                     TextField("Name", text: $name)
                 }
+                .onSurface()
 
                 Section {
                     HStack {
@@ -61,6 +62,7 @@ struct ItemEditor: View {
                 } footer: {
                     Text("Different sizes are priced separately, so “Milk 1 pt” and “Milk 2 L” each keep their own prices.")
                 }
+                .onSurface()
 
                 Section {
                     Stepper(value: $quantity, in: 1...99) {
@@ -90,8 +92,10 @@ struct ItemEditor: View {
                         }
                     }
                 }
+                .onSurface()
             }
-            .navigationTitle("Item Details")
+            .themedList()
+            .navigationTitle("Edit Item")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

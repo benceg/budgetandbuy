@@ -32,36 +32,40 @@ struct PriceSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(Money.currencySymbol)
-                        .font(.system(size: 40, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.secondary)
-                    TextField("0.00", text: $text)
-                        .font(.system(size: 64, weight: .bold, design: .rounded))
-                        .keyboardType(.decimalPad)
-                        .focused($isFocused)
-                        .fixedSize()
+                HStack(spacing: 8) {
+                    StoreBadge(store: target.store, size: 24)
+                    Text(target.isPrompt
+                         ? "What did it cost at \(target.store.name ?? "")?"
+                         : "Price at \(target.store.name ?? "")")
+                        .font(.headline)
+                        .foregroundStyle(Color.ink)
                 }
-                .accessibilityElement(children: .combine)
+                AmountField(text: $text, isFocused: $isFocused)
 
                 if let size = target.product.size {
                     Text(amount.map { "\(size.formatted) · \(size.unitPrice(of: $0))" } ?? size.formatted)
                         .font(.headline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.inkSecondary)
                         .monospacedDigit()
                 }
 
                 if let latest, let seen = latest.createdAt {
                     Text("Last seen at \(Money.format(latest.amountMinor)), \(Text(seen, format: .relative(presentation: .named)))")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.inkSecondary)
+                } else if target.isPrompt {
+                    Text("It’s remembered for next time, so you can compare shops. Shared with your household only.")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.inkSecondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
                 }
                 Spacer()
             }
             .padding(.top, 24)
             .frame(maxWidth: .infinity)
+            .canvasBackground()
             .navigationTitle(target.product.title)
-            .navigationSubtitle(target.store.name ?? "")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

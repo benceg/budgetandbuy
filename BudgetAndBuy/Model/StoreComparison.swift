@@ -39,7 +39,8 @@ struct StoreComparison {
     /// A split has to cover more items, or save at least this much, to be worth a second trip.
     static let minimumSplitSavingMinor: Int64 = 100
 
-    let itemCount: Int
+    let items: [Item]
+    var itemCount: Int { items.count }
     /// Stores with prices for the most items first, then the cheapest.
     let options: [Option]
     let nearest: Store?
@@ -50,7 +51,7 @@ struct StoreComparison {
     private let costs: [NSManagedObjectID: [NSManagedObjectID: Int64]]
 
     init(items: [Item], stores: [Store]) {
-        itemCount = items.count
+        self.items = items
 
         var costs: [NSManagedObjectID: [NSManagedObjectID: Int64]] = [:]
         var options: [Option] = []
@@ -99,6 +100,16 @@ struct StoreComparison {
             commonCount: common.count,
             extraMinutes: Int(store.travelMinutes) - Int(nearest.travelMinutes)
         )
+    }
+
+    /// The items with a price at a store.
+    func pricedItems(at store: Store) -> [Item] {
+        guard let storeCosts = costs[store.objectID] else { return [] }
+        return items.filter { storeCosts[$0.objectID] != nil }
+    }
+
+    func option(for store: Store) -> Option? {
+        options.first { $0.store == store }
     }
 
     /// The store that saves the most compared with the nearest one, if any does.

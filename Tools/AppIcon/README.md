@@ -1,0 +1,1 @@
+`icon.svg` is the source of the app icon. To update `AppIcon.png`, render it at 1024 × 1024 with no transparency, for example by opening it in a browser and exporting a screenshot, then replace `BudgetAndBuy/Assets.xcassets/AppIcon.appiconset/AppIcon.png`.

@@ -18,6 +18,15 @@ Open `BudgetAndBuy.xcodeproj` in Xcode 27 or later. The first time you run on a 
 - Devices that create data before their first sync can produce duplicate households or products. `Deduplication.swift` merges them deterministically on every remote change.
 - `GroceryCatalogue.swift` lists everyday items with their aisle and icon. Items it recognises get both straight away; anything else is sorted by Apple's on-device model, choosing from the aisle's icons.
 
+## The app
+
+- **Lists** tab: each list has three pages. **Items** has the add field, aisles and basket. **Where to Shop** shows the cheapest, one-stop and closest plans (`Planning.swift`). **Budget** shows the estimated cost by aisle and the month's spending. The bottom button starts and finishes a shop.
+- **Shops** tab: shops are added from Maps (nearby, or by name), with the journey estimated by Maps (`ShopFinder.swift`).
+- **Savings** tab: money saved and carbon avoided, from finished trips.
+- **Household** tab: members and invitations, the monthly budget, settings and help.
+- First launch runs a four-step introduction (`OnboardingView.swift`) that adds shops and a first list.
+- Colours and shared components live in `Shared/Palette.swift` and `Theme/Components.swift`. The app icon's source is `Tools/AppIcon/icon.svg`.
+
 ## Product icons
 
 Product icons are custom SF Symbols adapted from free icon sets (mostly Hugeicons; all MIT, ISC or Apache 2.0). `Tools/Icons/icons.json` says where each one comes from. To rebuild them after changing that file:

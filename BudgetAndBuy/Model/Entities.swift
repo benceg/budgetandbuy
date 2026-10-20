@@ -8,6 +8,8 @@ final class Household: NSManagedObject, Timestamped {
     @NSManaged var uuid: UUID?
     @NSManaged var createdAt: Date?
     @NSManaged var name: String?
+    /// Zero when no monthly budget is set.
+    @NSManaged var monthlyBudgetMinor: Int64
     @NSManaged var lists: Set<ShoppingList>?
     @NSManaged var products: Set<Product>?
     @NSManaged var stores: Set<Store>?
@@ -27,6 +29,8 @@ final class ShoppingList: NSManagedObject, Timestamped {
     @NSManaged var colorName: String?
     @NSManaged var symbolName: String?
     @NSManaged var sortOrder: Double
+    /// Zero when the list has no budget.
+    @NSManaged var budgetMinor: Int64
     @NSManaged var household: Household?
     @NSManaged var items: Set<Item>?
 

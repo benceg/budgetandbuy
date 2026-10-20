@@ -6,17 +6,22 @@ import os
 
 private let logger = Logger(subsystem: "app.budgetandbuy", category: "Sharing")
 
-/// The household's name and members, and the way into iCloud sharing.
-struct HouseholdView: View {
+/// Who's in the household and how to invite more people, with the app's
+/// settings and help.
+struct HouseholdScreen: View {
     @ObservedObject var household: Household
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var context
     @Environment(\.persistence) private var persistence
+    @AppStorage(StoreArrivalMonitor.enabledKey) private var noticesArrivals = false
+    @AppStorage("groupsByAisle") private var groupsByAisle = true
+    @AppStorage(OnboardingView.completedKey) private var hasCompletedOnboarding = true
     @State private var name = ""
     @State private var share: CKShare?
     @State private var isPreparingShare = false
     @State private var errorMessage: String?
     @State private var sharingDelegate: SharingDelegate?
+    @State private var isEditingBudget = false
+    @State private var isShowingHowItWorks = false
 
     private var isOwner: Bool { !household.isSharedWithMe }
 
@@ -28,49 +33,52 @@ struct HouseholdView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
+            List {
                 Section {
-                    VStack(spacing: 16) {
-                        ListIcon(symbolName: "house.fill", color: .accentColor, size: 80)
+                    VStack(spacing: 14) {
+                        Image(systemName: "house")
+                            .font(.system(size: 34))
+                            .foregroundStyle(Color.forestInk)
+                            .frame(width: 84, height: 84)
+                            .background(Color.sagePale, in: .circle)
                         if isOwner {
                             TextField("Household Name", text: $name)
                                 .font(.title2.bold())
                                 .multilineTextAlignment(.center)
+                                .foregroundStyle(Color.ink)
                                 .padding(.vertical, 12)
-                                .background(Color(.tertiarySystemFill), in: .rect(cornerRadius: 12))
+                                .background(Color.sunken, in: .rect(cornerRadius: 14))
                                 .submitLabel(.done)
                                 .onSubmit(saveName)
                         } else {
                             Text(household.name ?? "")
                                 .font(.title2.bold())
                         }
+                        Text("Everyone in the household shares its lists, shops and prices, and sees changes as they happen.")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.inkSecondary)
+                            .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
                 }
+                .onSurface()
 
-                Section("Members") {
+                Section {
                     if members.isEmpty {
                         MemberRow(name: String(localized: "You"), status: String(localized: "Owner"))
                     } else {
                         ForEach(members, id: \.self) { participant in
-                            MemberRow(
-                                name: displayName(of: participant),
-                                status: status(of: participant)
-                            )
+                            MemberRow(name: displayName(of: participant), status: status(of: participant))
                         }
                     }
-                }
-
-                Section {
                     Button {
                         Task { await openSharing() }
                     } label: {
                         HStack {
-                            Label(
-                                share == nil ? "Share Household…" : "Manage Sharing…",
-                                systemImage: "person.crop.circle.badge.plus"
-                            )
+                            Label(share == nil ? "Invite People" : "Manage Members", systemImage: "person.crop.circle.badge.plus")
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(Color.forestInk)
                             if isPreparingShare {
                                 Spacer()
                                 ProgressView()
@@ -78,19 +86,49 @@ struct HouseholdView: View {
                         }
                     }
                     .disabled(isPreparingShare || persistence == nil)
+                } header: {
+                    SectionHeading(title: "Members").textCase(nil)
                 } footer: {
-                    Text("Everyone in the household can see and edit all of its lists.")
+                    Text("Invitations go through iCloud. Nobody needs an account with us.")
+                        .foregroundStyle(Color.inkSecondary)
                 }
-            }
-            .navigationTitle("Household")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        saveName()
-                        dismiss()
+                .onSurface()
+
+                Section {
+                    Button { isEditingBudget = true } label: {
+                        LabeledContent("Monthly Budget") {
+                            Text(household.monthlyBudgetMinor > 0 ? Money.format(household.monthlyBudgetMinor) : String(localized: "None"))
+                        }
+                        .foregroundStyle(Color.ink)
                     }
+                    Toggle("Start Shopping When I Arrive", isOn: Binding(
+                        get: { noticesArrivals },
+                        set: { enabled in Task { await StoreArrivalMonitor.shared.setEnabled(enabled) } }
+                    ))
+                    Toggle("Group Lists by Aisle", isOn: $groupsByAisle)
+                } header: {
+                    SectionHeading(title: "Settings").textCase(nil)
                 }
+                .tint(.forest)
+                .onSurface()
+
+                Section {
+                    Button("How Budget & Buy Works") { isShowingHowItWorks = true }
+                    Button("Show the Introduction Again") { hasCompletedOnboarding = false }
+                    NavigationLink("Icon Licences") { LicencesView() }
+                } header: {
+                    SectionHeading(title: "Help").textCase(nil)
+                }
+                .foregroundStyle(Color.ink)
+                .onSurface()
+            }
+            .themedList()
+            .navigationTitle("Household")
+            .sheet(isPresented: $isEditingBudget) {
+                BudgetSheet(target: .month(household))
+            }
+            .sheet(isPresented: $isShowingHowItWorks) {
+                HowItWorksSheet()
             }
             .alert(
                 "Couldn’t Share Household",
@@ -104,6 +142,7 @@ struct HouseholdView: View {
                 name = household.name ?? ""
                 share = persistence?.existingShare(for: household)
             }
+            .onDisappear(perform: saveName)
         }
     }
 
@@ -180,19 +219,47 @@ private struct MemberRow: View {
     let name: String
     let status: String
 
+    private var initials: String {
+        name.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined().uppercased()
+    }
+
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: "person.crop.circle.fill")
-                .font(.largeTitle)
-                .foregroundStyle(.secondary)
+            Text(initials)
+                .font(.subheadline.bold())
+                .foregroundStyle(Color.forestInk)
+                .frame(width: 40, height: 40)
+                .background(Color.sagePale, in: .circle)
                 .accessibilityHidden(true)
             VStack(alignment: .leading) {
                 Text(name)
+                    .foregroundStyle(Color.ink)
                 Text(status)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.inkSecondary)
             }
         }
+    }
+}
+
+/// The licences of the icon sets the product icons come from.
+private struct LicencesView: View {
+    private var text: String {
+        Bundle.main.url(forResource: "Icon Licences", withExtension: "txt")
+            .flatMap { try? String(contentsOf: $0, encoding: .utf8) } ?? ""
+    }
+
+    var body: some View {
+        ScrollView {
+            Text(text)
+                .font(.footnote.monospaced())
+                .foregroundStyle(Color.ink)
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .canvasBackground()
+        .navigationTitle("Icon Licences")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -225,11 +292,4 @@ private final class SharingDelegate: NSObject, UICloudSharingControllerDelegate 
             onStop(share)
         }
     }
-}
-
-#Preview {
-    let persistence = PersistenceController.preview
-    HouseholdView(household: persistence.ensureHousehold())
-        .environment(\.managedObjectContext, persistence.viewContext)
-        .environment(\.persistence, persistence)
 }

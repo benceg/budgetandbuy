@@ -14,7 +14,8 @@ struct ShoppingLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: ShoppingActivityAttributes.self) { context in
             LockScreenView(context: context)
-                .activityBackgroundTint(nil)
+                .activityBackgroundTint(.canvas)
+                .activitySystemActionForegroundColor(.forestInk)
         } dynamicIsland: { context in
             let color = ListAppearance.color(named: context.attributes.colorName)
             return DynamicIsland {
@@ -58,14 +59,16 @@ private struct LockScreenView: View {
     var body: some View {
         let color = ListAppearance.color(named: context.attributes.colorName)
         HStack(spacing: 12) {
-            Image(systemName: "storefront.fill")
-                .font(.title3)
+            Text(String(context.attributes.storeName.prefix(1)).uppercased())
+                .font(.system(size: 20, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .frame(width: 44, height: 44)
-                .background(color.gradient, in: .circle)
+                .background(color, in: .circle)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(context.attributes.storeName)
                     .font(.headline)
+                    .foregroundStyle(Color.ink)
                 Text(context.state.summary)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -75,6 +78,7 @@ private struct LockScreenView: View {
             VStack(alignment: .trailing, spacing: 2) {
                 Text(Money.format(context.state.basketMinor))
                     .font(.title2.bold())
+                    .foregroundStyle(Color.ink)
                     .monospacedDigit()
                     .contentTransition(.numericText())
                 Text("\(context.state.basketCount) in basket")

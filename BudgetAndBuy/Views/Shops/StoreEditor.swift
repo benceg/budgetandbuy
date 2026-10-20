@@ -2,10 +2,10 @@ import CoreData
 import MapKit
 import SwiftUI
 
-/// Creates a store, or edits its name, colour and how you get there.
+/// Edits a shop's name, colour, location and how you get there.
 struct StoreEditor: View {
-    private let household: Household?
-    private let store: Store?
+    private let store: Store
+    private let onDelete: () -> Void
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var context
@@ -17,26 +17,15 @@ struct StoreEditor: View {
     @State private var coordinate: CLLocationCoordinate2D?
     @State private var isPickingLocation = false
     @AppStorage(StoreArrivalMonitor.enabledKey) private var noticesArrivals = false
-    @FocusState private var isNameFocused: Bool
+    @State private var isConfirmingDeletion = false
 
     /// Distances are stored in kilometres but entered in the local road unit.
     private static let distanceUnit: UnitLength =
         Locale.current.measurementSystem == .metric ? .kilometers : .miles
 
-    init(household: Household) {
-        self.household = household
-        store = nil
-        _name = State(initialValue: "")
-        _colorName = State(initialValue: "blue")
-        _travel = State(initialValue: .drive)
-        _minutes = State(initialValue: 10)
-        _distanceText = State(initialValue: "")
-        _coordinate = State(initialValue: nil)
-    }
-
-    init(store: Store) {
-        household = nil
+    init(store: Store, onDelete: @escaping () -> Void = {}) {
         self.store = store
+        self.onDelete = onDelete
         _name = State(initialValue: store.name ?? "")
         _colorName = State(initialValue: store.colorName ?? "blue")
         _travel = State(initialValue: store.travel)
@@ -61,19 +50,19 @@ struct StoreEditor: View {
             Form {
                 Section {
                     VStack(spacing: 20) {
-                        ListIcon(symbolName: "storefront.fill", color: ListAppearance.color(named: colorName), size: 96)
-                        TextField("Store Name", text: $name)
+                        StoreBadge(name: trimmedName.isEmpty ? "?" : trimmedName, colorName: colorName, size: 80)
+                        TextField("Shop Name", text: $name)
                             .font(.title2.bold())
                             .multilineTextAlignment(.center)
-                            .foregroundStyle(ListAppearance.color(named: colorName))
+                            .foregroundStyle(Color.ink)
                             .padding(.vertical, 12)
-                            .background(Color(.tertiarySystemFill), in: .rect(cornerRadius: 12))
-                            .focused($isNameFocused)
+                            .background(Color.sunken, in: .rect(cornerRadius: 14))
                             .submitLabel(.done)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
                 }
+                .onSurface()
 
                 Section {
                     SwatchGrid(items: ListAppearance.colorNames, selection: $colorName) { name in
@@ -82,15 +71,11 @@ struct StoreEditor: View {
                             .accessibilityLabel(name.capitalized)
                     }
                 }
+                .onSurface()
 
                 Section {
-                    Picker("Travel", selection: $travel) {
-                        ForEach(TravelMode.allCases) { mode in
-                            Text(mode.title).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .listRowSeparator(.hidden)
+                    ChipPicker(options: TravelMode.allCases.map { ($0, $0.shortTitle) }, selection: $travel)
+                        .listRowSeparator(.hidden)
 
                     Stepper(value: $minutes, in: 1...240) {
                         LabeledContent("Journey Time", value: String(localized: "\(minutes) min"))
@@ -110,6 +95,7 @@ struct StoreEditor: View {
                 } footer: {
                     Text("From home, one way. Used to weigh up savings against the trip, and to work out the carbon you save by shopping closer to home.")
                 }
+                .onSurface()
 
                 Section {
                     if let coordinate {
@@ -126,22 +112,36 @@ struct StoreEditor: View {
                     } else {
                         Button("Set Location…", systemImage: "mappin.and.ellipse") { isPickingLocation = true }
                     }
-                    Toggle("Notice When I Arrive", isOn: Binding(
+                    Toggle("Start Shopping When I Arrive", isOn: Binding(
                         get: { noticesArrivals },
                         set: { enabled in Task { await StoreArrivalMonitor.shared.setEnabled(enabled) } }
                     ))
+                    .tint(.forest)
                 } header: {
                     Text("Location")
                 } footer: {
-                    Text("When you arrive at a store with a location, Budget & Buy switches on shopping mode there and lets you know. Applies to all your stores. Your location is only checked on your iPhone.")
+                    Text("When you arrive at a shop with a location, Budget & Buy gets your list ready to shop there and lets you know. Applies to all your shops. Your location is only checked on your iPhone.")
                 }
+                .onSurface()
+
+                Section {
+                    Button("Delete Shop", role: .destructive) { isConfirmingDeletion = true }
+                        .foregroundStyle(Color.apricot)
+                }
+                .onSurface()
+            }
+            .themedList()
+            .alert("Delete “\(store.name ?? "")”?", isPresented: $isConfirmingDeletion) {
+                Button("Delete", role: .destructive, action: deleteStore)
+            } message: {
+                Text("This also deletes every price recorded there.")
             }
             .sheet(isPresented: $isPickingLocation) {
                 StoreLocationPicker(storeName: trimmedName, initial: coordinate) { picked in
                     coordinate = picked
                 }
             }
-            .navigationTitle(store == nil ? "New Store" : "Store Info")
+            .navigationTitle("Edit Shop")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -152,14 +152,12 @@ struct StoreEditor: View {
                         .disabled(trimmedName.isEmpty)
                 }
             }
-            .onAppear {
-                if store == nil { isNameFocused = true }
-            }
         }
     }
 
     private func save() {
-        guard !trimmedName.isEmpty, let target = store ?? household?.addStore() else { return }
+        guard !trimmedName.isEmpty else { return }
+        let target = store
         target.name = trimmedName
         target.colorName = colorName
         target.travel = travel
@@ -170,9 +168,12 @@ struct StoreEditor: View {
         Task { await StoreArrivalMonitor.shared.refresh() }
         dismiss()
     }
-}
 
-#Preview {
-    StoreEditor(household: PersistenceController.preview.ensureHousehold())
-        .environment(\.managedObjectContext, PersistenceController.preview.viewContext)
+    private func deleteStore() {
+        dismiss()
+        onDelete()
+        context.delete(store)
+        context.saveIfNeeded()
+        Task { await StoreArrivalMonitor.shared.refresh() }
+    }
 }
