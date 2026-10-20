@@ -83,6 +83,51 @@ struct ShoppingListTests {
         #expect(list.items?.first?.product == originalBread)
     }
 
+    @Test func movingContentsCopiesListsIntoAnotherHousehold() throws {
+        let mine = household
+        let weekly = mine.addList()
+        weekly.name = "Weekly"
+        weekly.colorName = "orange"
+        let milk = try #require(weekly.addItem(named: "Milk"))
+        milk.quantity = 2
+        milk.product?.category = .dairyAndEggs
+        weekly.addItem(named: "Coffee")?.setChecked(true)
+
+        let joined = Household.create(in: context)
+        let theirs = joined.addList()
+        theirs.name = "Big Shop"
+        theirs.addItem(named: "milk")
+
+        mine.moveContents(to: joined)
+        try context.save()
+
+        #expect(mine.lists?.isEmpty ?? true)
+        #expect(mine.products?.isEmpty ?? true)
+        #expect(joined.products?.count == 2)
+
+        let moved = try #require(joined.lists?.first { $0.name == "Weekly" })
+        #expect(moved.colorName == "orange")
+        #expect(moved.sortOrder > theirs.sortOrder)
+        // Their existing "milk" absorbs ours rather than creating a second product.
+        let theirMilk = try #require(theirs.items?.first?.product)
+        let movedMilk = try #require(moved.items?.first { $0.product == theirMilk })
+        #expect(movedMilk.quantity == 2)
+        #expect(movedMilk.displayName == "milk")
+        #expect(movedMilk.product?.category == .dairyAndEggs)
+        #expect(moved.basket.map(\.displayName) == ["Coffee"])
+    }
+
+    @Test func showsTheChosenHouseholdThenFallsBackToOwn() {
+        let mine = household
+        let other = Household.create(in: context)
+        let households = [mine, other]
+
+        let otherID = other.uuid?.uuidString ?? ""
+        #expect(HouseholdSelection.preferred(from: households, selectedID: otherID) == other)
+        #expect(HouseholdSelection.preferred(from: households, selectedID: "gone") == mine)
+        #expect(HouseholdSelection.preferred(from: [], selectedID: "") == nil)
+    }
+
     @Test(arguments: ProductCategory.allCases)
     func categoryIconsExist(_ category: ProductCategory) {
         #expect(UIImage(systemName: category.symbolName) != nil, "\(category.symbolName) isn't an SF Symbol")

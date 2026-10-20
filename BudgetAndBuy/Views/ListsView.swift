@@ -3,13 +3,18 @@ import SwiftUI
 
 struct ListsView: View {
     @ObservedObject var household: Household
+    let households: [Household]
+    @Binding var selectedID: String
     @Environment(\.managedObjectContext) private var context
     @FetchRequest private var lists: FetchedResults<ShoppingList>
     @State private var isAddingList = false
+    @State private var isShowingHousehold = false
     @State private var listPendingDeletion: ShoppingList?
 
-    init(household: Household) {
+    init(household: Household, households: [Household], selectedID: Binding<String>) {
         self.household = household
+        self.households = households
+        _selectedID = selectedID
         _lists = FetchRequest(
             sortDescriptors: [NSSortDescriptor(key: "sortOrder", ascending: true)],
             predicate: NSPredicate(format: "household == %@", household),
@@ -37,6 +42,16 @@ struct ListsView: View {
                 .onMove(perform: move)
             }
             .navigationTitle("Lists")
+            .navigationSubtitle(households.count > 1 ? household.name ?? "" : "")
+            .toolbarTitleMenu {
+                if households.count > 1 {
+                    Picker("Household", selection: $selectedID) {
+                        ForEach(households, id: \.objectID) { household in
+                            Text(household.name ?? "").tag(household.uuid?.uuidString ?? "")
+                        }
+                    }
+                }
+            }
             .navigationDestination(for: ShoppingList.self) { list in
                 ListDetailView(list: list)
             }
@@ -52,6 +67,9 @@ struct ListsView: View {
                 }
             }
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Household", systemImage: "person.2") { isShowingHousehold = true }
+                }
                 if !lists.isEmpty {
                     ToolbarItem(placement: .topBarTrailing) {
                         EditButton()
@@ -64,6 +82,9 @@ struct ListsView: View {
             }
             .sheet(isPresented: $isAddingList) {
                 ListEditor(household: household)
+            }
+            .sheet(isPresented: $isShowingHousehold) {
+                HouseholdView(household: household)
             }
             .alert(
                 "Delete “\(listPendingDeletion?.name ?? "")”?",
@@ -121,6 +142,8 @@ private struct ListRow: View {
 
 #Preview {
     let persistence = PersistenceController.preview
-    ListsView(household: persistence.ensureHousehold())
+    let household = persistence.ensureHousehold()
+    ListsView(household: household, households: [household], selectedID: .constant(""))
         .environment(\.managedObjectContext, persistence.viewContext)
+        .environment(\.persistence, persistence)
 }

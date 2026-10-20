@@ -86,13 +86,24 @@ final class PersistenceController {
     private func mergeDuplicates() {
         do {
             try viewContext.mergeDuplicateHouseholds(in: privateStore)
+            if let sharedStore {
+                let request = NSFetchRequest<Household>(entityName: "Household")
+                request.affectedStores = [sharedStore]
+                for household in try viewContext.fetch(request) {
+                    household.mergeDuplicateProducts()
+                }
+            }
         } catch {
-            logger.error("Merging duplicate households failed: \(error)")
+            logger.error("Merging duplicates failed: \(error)")
         }
         viewContext.saveIfNeeded()
     }
 
-    private static let sharedStoreFileName = "shared.sqlite"
+    nonisolated static let sharedStoreFileName = "shared.sqlite"
+
+    nonisolated static func isSharedStore(_ store: NSPersistentStore?) -> Bool {
+        store?.url?.lastPathComponent == sharedStoreFileName
+    }
 
     private static func cloudDescription(scope: CKDatabase.Scope) -> NSPersistentStoreDescription {
         let fileName = scope == .shared ? sharedStoreFileName : "private.sqlite"
