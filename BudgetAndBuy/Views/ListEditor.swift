@@ -97,7 +97,7 @@ struct ListEditor: View {
 }
 
 /// A grid of circular choices with a ring around the selected one.
-private struct SwatchGrid<Swatch: View>: View {
+struct SwatchGrid<Swatch: View>: View {
     let items: [String]
     @Binding var selection: String
     @ViewBuilder let swatch: (String) -> Swatch

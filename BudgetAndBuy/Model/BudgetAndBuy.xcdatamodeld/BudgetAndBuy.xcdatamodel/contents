@@ -6,6 +6,7 @@
         <attribute name="uuid" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <relationship name="lists" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ShoppingList" inverseName="household" inverseEntity="ShoppingList"/>
         <relationship name="products" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Product" inverseName="household" inverseEntity="Product"/>
+        <relationship name="stores" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Store" inverseName="household" inverseEntity="Store"/>
     </entity>
     <entity name="Item" representedClassName="Item" syncable="YES">
         <attribute name="checkedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
@@ -24,6 +25,14 @@
         <attribute name="uuid" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <relationship name="household" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Household" inverseName="products" inverseEntity="Household"/>
         <relationship name="items" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Item" inverseName="product" inverseEntity="Item"/>
+        <relationship name="prices" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Price" inverseName="product" inverseEntity="Price"/>
+    </entity>
+    <entity name="Price" representedClassName="Price" syncable="YES">
+        <attribute name="amountMinor" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="uuid" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <relationship name="product" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Product" inverseName="prices" inverseEntity="Product"/>
+        <relationship name="store" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Store" inverseName="prices" inverseEntity="Store"/>
     </entity>
     <entity name="ShoppingList" representedClassName="ShoppingList" syncable="YES">
         <attribute name="colorName" optional="YES" attributeType="String" defaultValueString="green"/>
@@ -34,5 +43,16 @@
         <attribute name="uuid" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <relationship name="household" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Household" inverseName="lists" inverseEntity="Household"/>
         <relationship name="items" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Item" inverseName="list" inverseEntity="Item"/>
+    </entity>
+    <entity name="Store" representedClassName="Store" syncable="YES">
+        <attribute name="colorName" optional="YES" attributeType="String" defaultValueString="blue"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="distanceKm" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="travelMinutes" attributeType="Integer 16" defaultValueString="10" usesScalarValueType="YES"/>
+        <attribute name="travelMode" optional="YES" attributeType="String" defaultValueString="drive"/>
+        <attribute name="uuid" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <relationship name="household" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Household" inverseName="stores" inverseEntity="Household"/>
+        <relationship name="prices" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Price" inverseName="store" inverseEntity="Price"/>
     </entity>
 </model>

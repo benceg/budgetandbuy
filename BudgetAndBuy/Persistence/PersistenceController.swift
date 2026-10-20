@@ -158,6 +158,24 @@ extension PersistenceController {
         party.symbolName = "flame.fill"
         party.addItem(named: "Burgers")
 
+        let aldi = household.addStore()
+        aldi.name = "Aldi"
+        aldi.colorName = "blue"
+        aldi.travelMinutes = 20
+        aldi.distanceKm = 14
+        let coop = household.addStore()
+        coop.name = "Co-op"
+        coop.colorName = "teal"
+        coop.travel = .walk
+        coop.travelMinutes = 4
+        for (name, aldiPrice, coopPrice) in [
+            ("Semi-skimmed milk", 145, 175), ("Sourdough", 129, 250), ("Bananas", 17, 25), ("Cheddar", 299, 425),
+        ] {
+            let product = household.product(named: name)
+            aldi.recordPrice(Int64(aldiPrice), for: product)
+            coop.recordPrice(Int64(coopPrice), for: product)
+        }
+
         controller.viewContext.saveIfNeeded()
         return controller
     }()

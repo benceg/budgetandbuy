@@ -10,6 +10,7 @@ final class Household: NSManagedObject, Timestamped {
     @NSManaged var name: String?
     @NSManaged var lists: Set<ShoppingList>?
     @NSManaged var products: Set<Product>?
+    @NSManaged var stores: Set<Store>?
 
     override func awakeFromInsert() {
         super.awakeFromInsert()
@@ -59,6 +60,41 @@ final class Product: NSManagedObject, Timestamped {
     @NSManaged var categoryID: String?
     @NSManaged var household: Household?
     @NSManaged var items: Set<Item>?
+    @NSManaged var prices: Set<Price>?
+
+    override func awakeFromInsert() {
+        super.awakeFromInsert()
+        stamp()
+    }
+}
+
+@objc(Store)
+final class Store: NSManagedObject, Timestamped {
+    @NSManaged var uuid: UUID?
+    @NSManaged var createdAt: Date?
+    @NSManaged var name: String?
+    @NSManaged var colorName: String?
+    @NSManaged var travelMode: String?
+    @NSManaged var travelMinutes: Int16
+    @NSManaged var distanceKm: Double
+    @NSManaged var household: Household?
+    @NSManaged var prices: Set<Price>?
+
+    override func awakeFromInsert() {
+        super.awakeFromInsert()
+        stamp()
+    }
+}
+
+/// A price seen for a product at a store. `createdAt` is when it was seen;
+/// the newest one is the current price.
+@objc(Price)
+final class Price: NSManagedObject, Timestamped {
+    @NSManaged var uuid: UUID?
+    @NSManaged var createdAt: Date?
+    @NSManaged var amountMinor: Int64
+    @NSManaged var product: Product?
+    @NSManaged var store: Store?
 
     override func awakeFromInsert() {
         super.awakeFromInsert()

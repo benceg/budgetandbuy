@@ -6,12 +6,19 @@ struct ListDetailView: View {
     @Environment(\.managedObjectContext) private var context
     @Environment(\.dismiss) private var dismiss
     @FetchRequest private var items: FetchedResults<Item>
+    @FetchRequest private var stores: FetchedResults<Store>
+    // Fetched so totals and row prices refresh whenever any price changes.
+    @FetchRequest private var prices: FetchedResults<Price>
+    /// The store you're shopping in, per device and shared by all lists.
+    @AppStorage("shoppingStoreID") private var shoppingStoreID = ""
     @State private var newItemName = ""
     @FocusState private var isAddingItem: Bool
     @State private var isBasketExpanded = true
     @State private var isEditingInfo = false
     @State private var isConfirmingClear = false
     @State private var isConfirmingDeletion = false
+    @State private var isAddingStore = false
+    @State private var pricing: PricingTarget?
 
     init(list: ShoppingList) {
         self.list = list
@@ -20,6 +27,20 @@ struct ListDetailView: View {
             predicate: NSPredicate(format: "list == %@", list),
             animation: .default
         )
+        // A list being deleted has no household; match nothing rather than everything.
+        let household = list.household
+        _stores = FetchRequest(
+            sortDescriptors: [NSSortDescriptor(key: "name", ascending: true, selector: #selector(NSString.localizedStandardCompare(_:)))],
+            predicate: household.map { NSPredicate(format: "household == %@", $0) } ?? NSPredicate(value: false)
+        )
+        _prices = FetchRequest(
+            sortDescriptors: [],
+            predicate: household.map { NSPredicate(format: "store.household == %@", $0) } ?? NSPredicate(value: false)
+        )
+    }
+
+    private var shoppingStore: Store? {
+        stores.first { $0.uuid?.uuidString == shoppingStoreID }
     }
 
     private var toBuy: [Item] { items.filter { !$0.isChecked } }
@@ -40,7 +61,7 @@ struct ListDetailView: View {
         List {
             Section {
                 ForEach(toBuy, id: \.objectID) { item in
-                    ItemRow(item: item, tint: list.color)
+                    itemRow(item)
                 }
                 newItemRow
                 ForEach(suggestions, id: \.objectID) { product in
@@ -53,12 +74,19 @@ struct ListDetailView: View {
                             .foregroundStyle(list.color)
                     }
                 }
+            } footer: {
+                if let shoppingStore, !toBuy.isEmpty {
+                    let total = StoreTotal(items: toBuy, at: shoppingStore)
+                    if total.pricedCount > 0 {
+                        Text("About \(Money.format(total.amountMinor)) for \(total.pricedCount) of \(total.itemCount) items at \(shoppingStore.name ?? "")")
+                    }
+                }
             }
 
             if !inBasket.isEmpty {
                 Section(isExpanded: $isBasketExpanded) {
                     ForEach(inBasket, id: \.objectID) { item in
-                        ItemRow(item: item, tint: list.color)
+                        itemRow(item)
                     }
                 } header: {
                     basketHeader
@@ -67,10 +95,19 @@ struct ListDetailView: View {
         }
         .listStyle(.plain)
         .navigationTitle(list.name ?? "")
+        .navigationSubtitle(subtitle)
         .tint(list.color)
         .toolbar { toolbar }
         .sheet(isPresented: $isEditingInfo) {
             ListEditor(list: list)
+        }
+        .sheet(isPresented: $isAddingStore) {
+            if let household = list.household {
+                StoreEditor(household: household)
+            }
+        }
+        .sheet(item: $pricing) { target in
+            PriceSheet(target: target)
         }
         .confirmationDialog("Clear the basket?", isPresented: $isConfirmingClear, titleVisibility: .visible) {
             Button("Clear \(inBasket.count) Items", role: .destructive, action: clearBasket)
@@ -80,6 +117,24 @@ struct ListDetailView: View {
         } message: {
             Text("This will delete everything on the list.")
         }
+    }
+
+    private var subtitle: String {
+        guard let shoppingStore else { return "" }
+        let basket = StoreTotal(items: inBasket, at: shoppingStore)
+        guard basket.amountMinor > 0 else { return shoppingStore.name ?? "" }
+        return String(localized: "\(shoppingStore.name ?? "") · \(Money.format(basket.amountMinor)) in basket")
+    }
+
+    private func itemRow(_ item: Item) -> some View {
+        ItemRow(
+            item: item,
+            tint: list.color,
+            store: shoppingStore,
+            price: shoppingStore.flatMap { item.product?.latestPrice(at: $0) },
+            onToggle: { toggle(item) },
+            onEditPrice: { editPrice(of: item) }
+        )
     }
 
     private var newItemRow: some View {
@@ -141,6 +196,42 @@ struct ListDetailView: View {
             }
         }
         ToolbarSpacer(.flexible, placement: .bottomBar)
+        ToolbarItem(placement: .bottomBar) {
+            Menu {
+                Picker("Shopping At", selection: $shoppingStoreID) {
+                    Text("Not Shopping").tag("")
+                    ForEach(stores, id: \.objectID) { store in
+                        Label(store.name ?? "", systemImage: "storefront").tag(store.uuid?.uuidString ?? "")
+                    }
+                }
+                Divider()
+                Button("New Store…", systemImage: "plus") { isAddingStore = true }
+            } label: {
+                Label(shoppingStore?.name ?? String(localized: "Shopping At…"), systemImage: "storefront")
+                    .labelStyle(.titleAndIcon)
+            }
+        }
+    }
+
+    /// Ticking an item off while shopping confirms its price here, or asks for
+    /// one if this store has none yet.
+    private func toggle(_ item: Item) {
+        withAnimation {
+            item.setChecked(!item.isChecked)
+        }
+        if item.isChecked, let store = shoppingStore, let product = item.product {
+            if let latest = product.latestPrice(at: store) {
+                store.recordPrice(latest.amountMinor, for: product)
+            } else {
+                pricing = PricingTarget(product: product, store: store, isPrompt: true)
+            }
+        }
+        context.saveIfNeeded()
+    }
+
+    private func editPrice(of item: Item) {
+        guard let store = shoppingStore, let product = item.product else { return }
+        pricing = PricingTarget(product: product, store: store)
     }
 
     private func addItem() {
@@ -171,14 +262,13 @@ struct ListDetailView: View {
 private struct ItemRow: View {
     @ObservedObject var item: Item
     let tint: Color
+    let store: Store?
+    let price: Price?
+    let onToggle: () -> Void
+    let onEditPrice: () -> Void
 
     var body: some View {
-        Button {
-            withAnimation {
-                item.setChecked(!item.isChecked)
-            }
-            item.managedObjectContext?.saveIfNeeded()
-        } label: {
+        Button(action: onToggle) {
             HStack(spacing: 12) {
                 Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
@@ -187,11 +277,7 @@ private struct ItemRow: View {
                 Text(item.displayName)
                     .foregroundStyle(item.isChecked ? .secondary : .primary)
                 Spacer()
-                if item.quantity > 1 {
-                    Text("×\(item.quantity)")
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                }
+                trailing
             }
             .contentShape(.rect)
         }
@@ -202,11 +288,39 @@ private struct ItemRow: View {
             Button("Increase Quantity", systemImage: "plus") { changeQuantity(by: 1) }
             Button("Decrease Quantity", systemImage: "minus") { changeQuantity(by: -1) }
                 .disabled(item.quantity <= 1)
+            if store != nil {
+                Button(price == nil ? "Add Price…" : "Edit Price…", systemImage: "tag", action: onEditPrice)
+            }
             Divider()
             Button("Delete", systemImage: "trash", role: .destructive, action: delete)
         }
         .swipeActions {
             Button("Delete", systemImage: "trash", role: .destructive, action: delete)
+        }
+    }
+
+    @ViewBuilder
+    private var trailing: some View {
+        if store != nil {
+            if let price {
+                VStack(alignment: .trailing) {
+                    Text(Money.format(price.amountMinor * Int64(item.quantity)))
+                    if item.quantity > 1 {
+                        Text("\(item.quantity) × \(Money.format(price.amountMinor))")
+                            .font(.caption)
+                    }
+                }
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+            } else {
+                Button("Add Price", action: onEditPrice)
+                    .font(.subheadline)
+                    .buttonStyle(.borderless)
+            }
+        } else if item.quantity > 1 {
+            Text("×\(item.quantity)")
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
         }
     }
 

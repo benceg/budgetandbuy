@@ -7,7 +7,9 @@ struct ListsView: View {
     @Binding var selectedID: String
     @Environment(\.managedObjectContext) private var context
     @FetchRequest private var lists: FetchedResults<ShoppingList>
+    @FetchRequest private var stores: FetchedResults<Store>
     @State private var isAddingList = false
+    @State private var isAddingStore = false
     @State private var isShowingHousehold = false
     @State private var listPendingDeletion: ShoppingList?
 
@@ -20,29 +22,46 @@ struct ListsView: View {
             predicate: NSPredicate(format: "household == %@", household),
             animation: .default
         )
+        _stores = FetchRequest(
+            sortDescriptors: [NSSortDescriptor(key: "name", ascending: true, selector: #selector(NSString.localizedStandardCompare(_:)))],
+            predicate: NSPredicate(format: "household == %@", household),
+            animation: .default
+        )
     }
 
     var body: some View {
         NavigationStack {
             List {
-                ForEach(lists, id: \.objectID) { list in
-                    NavigationLink(value: list) {
-                        ListRow(list: list)
+                if !lists.isEmpty {
+                    Section("Lists") {
+                        ForEach(lists, id: \.objectID) { list in
+                            NavigationLink(value: list) {
+                                ListRow(list: list)
+                            }
+                            .swipeActions {
+                                Button("Delete", systemImage: "trash", role: .destructive) {
+                                    if list.items?.isEmpty ?? true {
+                                        delete(list)
+                                    } else {
+                                        listPendingDeletion = list
+                                    }
+                                }
+                            }
+                        }
+                        .onMove(perform: move)
                     }
-                    .swipeActions {
-                        Button("Delete", systemImage: "trash", role: .destructive) {
-                            if list.items?.isEmpty ?? true {
-                                delete(list)
-                            } else {
-                                listPendingDeletion = list
+                }
+                if !stores.isEmpty {
+                    Section("Stores") {
+                        ForEach(stores, id: \.objectID) { store in
+                            NavigationLink(value: store) {
+                                StoreRow(store: store)
                             }
                         }
                     }
                 }
-                .onMove(perform: move)
             }
-            .navigationTitle("Lists")
-            .navigationSubtitle(households.count > 1 ? household.name ?? "" : "")
+            .navigationTitle(household.name ?? String(localized: "Lists"))
             .toolbarTitleMenu {
                 if households.count > 1 {
                     Picker("Household", selection: $selectedID) {
@@ -55,8 +74,11 @@ struct ListsView: View {
             .navigationDestination(for: ShoppingList.self) { list in
                 ListDetailView(list: list)
             }
+            .navigationDestination(for: Store.self) { store in
+                StoreDetailView(store: store)
+            }
             .overlay {
-                if lists.isEmpty {
+                if lists.isEmpty && stores.isEmpty {
                     ContentUnavailableView {
                         Label("No Lists", systemImage: "cart")
                     } description: {
@@ -77,11 +99,17 @@ struct ListsView: View {
                 }
                 ToolbarSpacer(.flexible, placement: .bottomBar)
                 ToolbarItem(placement: .bottomBar) {
-                    Button("Add List", systemImage: "plus") { isAddingList = true }
+                    Menu("Add", systemImage: "plus") {
+                        Button("New List", systemImage: "list.bullet") { isAddingList = true }
+                        Button("New Store", systemImage: "storefront") { isAddingStore = true }
+                    }
                 }
             }
             .sheet(isPresented: $isAddingList) {
                 ListEditor(household: household)
+            }
+            .sheet(isPresented: $isAddingStore) {
+                StoreEditor(household: household)
             }
             .sheet(isPresented: $isShowingHousehold) {
                 HouseholdView(household: household)
@@ -136,6 +164,22 @@ private struct ListRow: View {
             Text(remaining.count, format: .number)
                 .foregroundStyle(.secondary)
                 .accessibilityLabel("\(remaining.count) to buy")
+        }
+    }
+}
+
+private struct StoreRow: View {
+    @ObservedObject var store: Store
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ListIcon(symbolName: "storefront.fill", color: store.color)
+            VStack(alignment: .leading) {
+                Text(store.name ?? "")
+                Text("\(Image(systemName: store.travel.symbolName)) \(store.journey)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 }

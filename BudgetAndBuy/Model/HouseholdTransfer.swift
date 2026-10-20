@@ -1,9 +1,10 @@
 import CoreData
 
 extension Household {
-    /// Moves every list and product into another household, such as one you've
-    /// just joined. Households can live in different stores, which can't be
-    /// related, so this copies the objects across and deletes the originals.
+    /// Moves every list, product, store and price into another household, such
+    /// as one you've just joined. Households can live in different persistent
+    /// stores, which can't be related, so this copies the objects across and
+    /// deletes the originals.
     func moveContents(to destination: Household) {
         guard destination != self, let context = managedObjectContext else { return }
 
@@ -27,6 +28,24 @@ extension Household {
                 itemCopy.checkedAt = item.checkedAt
             }
             context.delete(list)
+        }
+
+        for store in (stores ?? []).sorted(by: Store.isOlder) {
+            let copy = destination.addStore()
+            copy.name = store.name
+            copy.colorName = store.colorName
+            copy.travelMode = store.travelMode
+            copy.travelMinutes = store.travelMinutes
+            copy.distanceKm = store.distanceKm
+            for price in store.prices ?? [] {
+                guard let product = price.product.flatMap({ copies[$0.objectID] }) else { continue }
+                let priceCopy = copy.insertRelated(Price.self)
+                priceCopy.amountMinor = price.amountMinor
+                priceCopy.createdAt = price.createdAt
+                priceCopy.product = product
+                priceCopy.store = copy
+            }
+            context.delete(store)
         }
 
         for product in products ?? [] {

@@ -15,6 +15,7 @@ extension NSManagedObjectContext {
         for duplicate in households.dropFirst() {
             for list in duplicate.lists ?? [] { list.household = keeper }
             for product in duplicate.products ?? [] { product.household = keeper }
+            for store in duplicate.stores ?? [] { store.household = keeper }
             processPendingChanges()
             delete(duplicate)
         }
@@ -33,6 +34,9 @@ extension Household {
             for duplicate in sorted.dropFirst() {
                 if keeper.categoryID == nil { keeper.categoryID = duplicate.categoryID }
                 for item in duplicate.items ?? [] { item.product = keeper }
+                for price in duplicate.prices ?? [] { price.product = keeper }
+                // Deleting a product cascades to its prices; detach the moved ones first.
+                managedObjectContext?.processPendingChanges()
                 managedObjectContext?.delete(duplicate)
             }
         }

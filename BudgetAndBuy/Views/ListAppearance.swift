@@ -36,6 +36,10 @@ extension ShoppingList {
     var symbol: String { symbolName ?? "cart.fill" }
 }
 
+extension Store {
+    var color: Color { ListAppearance.color(named: colorName) }
+}
+
 /// A white symbol on a coloured circle.
 struct ListIcon: View {
     let symbolName: String

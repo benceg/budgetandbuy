@@ -128,6 +128,104 @@ struct ShoppingListTests {
         #expect(HouseholdSelection.preferred(from: [], selectedID: "") == nil)
     }
 
+    // MARK: Prices
+
+    @Test func parsesTypedPrices() {
+        #expect(Money.minorUnits(from: "1.15") == 115)
+        #expect(Money.minorUnits(from: " 2 ") == 200)
+        #expect(Money.minorUnits(from: "0.999") == 100)
+        #expect(Money.minorUnits(from: "1,15", locale: Locale(identifier: "de_DE")) == 115)
+        #expect(Money.minorUnits(from: "-1") == nil)
+        #expect(Money.minorUnits(from: "abc") == nil)
+        #expect(Money.minorUnits(from: "") == nil)
+    }
+
+    @Test func seeingTheSamePriceTwiceInADayRecordsItOnce() {
+        let store = household.addStore()
+        let milk = household.product(named: "Milk")
+        let morning = Date(timeIntervalSince1970: 1_800_000_000)
+
+        let first = store.recordPrice(145, for: milk, on: morning)
+        #expect(store.recordPrice(145, for: milk, on: morning.addingTimeInterval(3600)) == first)
+
+        let changed = store.recordPrice(150, for: milk, on: morning.addingTimeInterval(7200))
+        #expect(changed != first)
+        #expect(milk.latestPrice(at: store) == changed)
+
+        let nextDay = store.recordPrice(150, for: milk, on: morning.addingTimeInterval(86_400))
+        #expect(nextDay != changed)
+        #expect(store.prices?.count == 3)
+        #expect(store.currentPrices == [nextDay])
+    }
+
+    @Test func pricesAreKeptPerStore() {
+        let aldi = household.addStore()
+        let coop = household.addStore()
+        let milk = household.product(named: "Milk")
+        aldi.recordPrice(145, for: milk)
+        coop.recordPrice(175, for: milk)
+        #expect(milk.latestPrice(at: aldi)?.amountMinor == 145)
+        #expect(milk.latestPrice(at: coop)?.amountMinor == 175)
+    }
+
+    @Test func totalsCountQuantitiesAndOnlyPricedItems() throws {
+        let store = household.addStore()
+        let list = household.addList()
+        let milk = try #require(list.addItem(named: "Milk"))
+        milk.quantity = 2
+        let bread = try #require(list.addItem(named: "Bread"))
+        list.addItem(named: "Saffron")
+        store.recordPrice(145, for: try #require(milk.product))
+        store.recordPrice(129, for: try #require(bread.product))
+
+        let total = StoreTotal(items: list.items ?? [], at: store)
+        #expect(total.amountMinor == 145 * 2 + 129)
+        #expect(total.pricedCount == 2)
+        #expect(total.itemCount == 3)
+    }
+
+    @Test func mergingProductsKeepsTheirPrices() throws {
+        let store = household.addStore()
+        let older = household.product(named: "Milk")
+        store.recordPrice(145, for: older, on: .now.addingTimeInterval(-86_400))
+        try context.save()
+
+        let newer = household.insertRelated(Product.self)
+        newer.name = "milk"
+        newer.normalizedName = "milk"
+        newer.household = household
+        newer.createdAt = .now.addingTimeInterval(60)
+        let newerPrice = store.recordPrice(150, for: newer)
+
+        household.mergeDuplicateProducts()
+        try context.save()
+
+        #expect(household.products == [older])
+        #expect(older.prices?.count == 2)
+        #expect(older.latestPrice(at: store) == newerPrice)
+    }
+
+    @Test func movingContentsCopiesStoresAndPrices() throws {
+        let mine = household
+        let store = mine.addStore()
+        store.name = "Aldi"
+        store.travel = .walk
+        store.travelMinutes = 7
+        store.recordPrice(145, for: mine.product(named: "Milk"))
+
+        let joined = Household.create(in: context)
+        mine.moveContents(to: joined)
+        try context.save()
+
+        #expect(mine.stores?.isEmpty ?? true)
+        let moved = try #require(joined.stores?.first)
+        #expect(moved.name == "Aldi")
+        #expect(moved.travel == .walk)
+        #expect(moved.travelMinutes == 7)
+        let milk = try #require(joined.products?.first)
+        #expect(milk.latestPrice(at: moved)?.amountMinor == 145)
+    }
+
     @Test(arguments: ProductCategory.allCases)
     func categoryIconsExist(_ category: ProductCategory) {
         #expect(UIImage(systemName: category.symbolName) != nil, "\(category.symbolName) isn't an SF Symbol")
