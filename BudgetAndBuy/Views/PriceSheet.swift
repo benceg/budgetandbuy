@@ -44,6 +44,13 @@ struct PriceSheet: View {
                 }
                 .accessibilityElement(children: .combine)
 
+                if let size = target.product.size {
+                    Text(amount.map { "\(size.formatted) · \(size.unitPrice(of: $0))" } ?? size.formatted)
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+
                 if let latest, let seen = latest.createdAt {
                     Text("Last seen at \(Money.format(latest.amountMinor)), \(Text(seen, format: .relative(presentation: .named)))")
                         .font(.subheadline)
@@ -53,7 +60,7 @@ struct PriceSheet: View {
             }
             .padding(.top, 24)
             .frame(maxWidth: .infinity)
-            .navigationTitle(target.product.name ?? "")
+            .navigationTitle(target.product.title)
             .navigationSubtitle(target.store.name ?? "")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -11,6 +11,7 @@ struct ListDetailView: View {
     @FetchRequest private var prices: FetchedResults<Price>
     /// The store you're shopping in, per device and shared by all lists.
     @AppStorage("shoppingStoreID") private var shoppingStoreID = ""
+    @AppStorage("groupsByAisle") private var groupsByAisle = true
     @State private var newItemName = ""
     @FocusState private var isAddingItem: Bool
     @State private var isBasketExpanded = true
@@ -21,6 +22,7 @@ struct ListDetailView: View {
     @State private var isComparing = false
     @State private var finishedTrip: FinishedTrip?
     @State private var pricing: PricingTarget?
+    @State private var editingItem: EditingItem?
 
     init(list: ShoppingList) {
         self.list = list
@@ -53,17 +55,38 @@ struct ListDetailView: View {
 
     private var suggestions: [Product] {
         let onList = Set(toBuy.compactMap(\.product))
-        return list.household?.products(matching: newItemName, limit: 6)
-            .filter { !onList.contains($0) && $0.normalizedName != ProductName.normalized(newItemName) }
+        let typed = ProductSize.split(newItemName)
+        let typedKey = ProductName.normalized(typed.name)
+        return list.household?.products(matching: typed.name, limit: 6)
+            .filter { !onList.contains($0) && !$0.matches(normalizedName: typedKey, size: typed.size) }
             .prefix(3)
             .map(\.self) ?? []
     }
 
+    /// Aisle sections, once at least one item has an aisle.
+    private var aisles: [(category: ProductCategory, items: [Item])]? {
+        guard groupsByAisle, toBuy.contains(where: { $0.product?.category != nil }) else { return nil }
+        return ProductCategory.aisles(of: toBuy)
+    }
+
     var body: some View {
         List {
+            if let aisles {
+                ForEach(aisles, id: \.category) { aisle in
+                    Section {
+                        ForEach(aisle.items, id: \.objectID) { item in
+                            itemRow(item)
+                        }
+                    } header: {
+                        Label(aisle.category.title, systemImage: aisle.category.symbolName)
+                    }
+                }
+            }
             Section {
-                ForEach(toBuy, id: \.objectID) { item in
-                    itemRow(item)
+                if aisles == nil {
+                    ForEach(toBuy, id: \.objectID) { item in
+                        itemRow(item)
+                    }
                 }
                 newItemRow
                 ForEach(suggestions, id: \.objectID) { product in
@@ -72,7 +95,7 @@ struct ListDetailView: View {
                         context.saveIfNeeded()
                         newItemName = ""
                     } label: {
-                        Label(product.name ?? "", systemImage: "plus.circle")
+                        Label(product.title, systemImage: "plus.circle")
                             .foregroundStyle(list.color)
                     }
                 }
@@ -120,6 +143,9 @@ struct ListDetailView: View {
         .sheet(isPresented: $isComparing) {
             CompareView(list: list)
         }
+        .sheet(item: $editingItem) { editing in
+            ItemEditor(item: editing.item)
+        }
         .sheet(item: $finishedTrip) { finished in
             TripSummaryView(trip: finished.trip)
         }
@@ -152,7 +178,8 @@ struct ListDetailView: View {
             store: shoppingStore,
             price: shoppingStore.flatMap { item.product?.latestPrice(at: $0) },
             onToggle: { toggle(item) },
-            onEditPrice: { editPrice(of: item) }
+            onEditPrice: { editPrice(of: item) },
+            onEdit: { editingItem = EditingItem(item: item) }
         )
     }
 
@@ -204,6 +231,7 @@ struct ListDetailView: View {
                 Menu("More", systemImage: "ellipsis") {
                     Button("Show List Info", systemImage: "info.circle") { isEditingInfo = true }
                     Button("Compare Stores", systemImage: "chart.bar.xaxis") { isComparing = true }
+                    Toggle("Group by Aisle", systemImage: "square.grid.2x2", isOn: $groupsByAisle)
                     Button("Clear Basket", systemImage: "basket") { isConfirmingClear = true }
                         .disabled(inBasket.isEmpty)
                     Divider()
@@ -274,12 +302,15 @@ struct ListDetailView: View {
     }
 
     private func addItem() {
-        guard list.addItem(named: newItemName) != nil else {
+        guard let item = list.addItem(named: newItemName) else {
             // Returning on an empty row ends entry, as in Reminders.
             isAddingItem = false
             return
         }
         context.saveIfNeeded()
+        if let product = item.product {
+            ProductCategorizer.shared.categorize([product])
+        }
         newItemName = ""
         isAddingItem = true
     }
@@ -298,6 +329,11 @@ struct ListDetailView: View {
     }
 }
 
+private struct EditingItem: Identifiable {
+    let item: Item
+    var id: NSManagedObjectID { item.objectID }
+}
+
 private struct FinishedTrip: Identifiable {
     let trip: Trip
     var id: NSManagedObjectID { trip.objectID }
@@ -310,6 +346,7 @@ private struct ItemRow: View {
     let price: Price?
     let onToggle: () -> Void
     let onEditPrice: () -> Void
+    let onEdit: () -> Void
 
     var body: some View {
         Button(action: onToggle) {
@@ -318,8 +355,15 @@ private struct ItemRow: View {
                     .font(.title2)
                     .foregroundStyle(item.isChecked ? tint : Color(.tertiaryLabel))
                     .contentTransition(.symbolEffect(.replace))
-                Text(item.displayName)
-                    .foregroundStyle(item.isChecked ? .secondary : .primary)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(item.product?.name ?? "")
+                        .foregroundStyle(item.isChecked ? .secondary : .primary)
+                    if let size = item.product?.size {
+                        Text(size.formatted)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Spacer()
                 trailing
             }
@@ -329,6 +373,7 @@ private struct ItemRow: View {
         .accessibilityValue(item.isChecked ? Text("In basket") : Text("To buy"))
         .sensoryFeedback(.selection, trigger: item.isChecked)
         .contextMenu {
+            Button("Edit Item…", systemImage: "info.circle", action: onEdit)
             Button("Increase Quantity", systemImage: "plus") { changeQuantity(by: 1) }
             Button("Decrease Quantity", systemImage: "minus") { changeQuantity(by: -1) }
                 .disabled(item.quantity <= 1)
@@ -341,6 +386,10 @@ private struct ItemRow: View {
         .swipeActions {
             Button("Delete", systemImage: "trash", role: .destructive, action: delete)
         }
+        .swipeActions(edge: .leading) {
+            Button("Details", systemImage: "info.circle", action: onEdit)
+                .tint(.gray)
+        }
     }
 
     @ViewBuilder
@@ -351,6 +400,9 @@ private struct ItemRow: View {
                     Text(Money.format(price.amountMinor * Int64(item.quantity)))
                     if item.quantity > 1 {
                         Text("\(item.quantity) × \(Money.format(price.amountMinor))")
+                            .font(.caption)
+                    } else if let size = item.product?.size {
+                        Text(size.unitPrice(of: price.amountMinor))
                             .font(.caption)
                     }
                 }

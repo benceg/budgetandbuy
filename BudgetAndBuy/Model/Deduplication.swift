@@ -25,10 +25,10 @@ extension NSManagedObjectContext {
 }
 
 extension Household {
-    /// Two devices can each create "Milk" while offline. Keep the oldest product
-    /// and point every item at it.
+    /// Two devices can each create "Milk 2 L" while offline. Keep the oldest
+    /// product and point every item and price at it.
     func mergeDuplicateProducts() {
-        let groups = Dictionary(grouping: products ?? []) { $0.normalizedName ?? "" }
+        let groups = Dictionary(grouping: products ?? []) { $0.identityKey }
         for group in groups.values where group.count > 1 {
             let sorted = group.sorted(by: Product.isOlder)
             let keeper = sorted[0]

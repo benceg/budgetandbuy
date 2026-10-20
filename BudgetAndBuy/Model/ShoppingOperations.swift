@@ -27,16 +27,17 @@ extension Household {
         return list
     }
 
-    /// The household's product with this name, created if it's new.
-    func product(named rawName: String) -> Product {
+    /// The household's product with this name and size, created if it's new.
+    func product(named rawName: String, size: ProductSize? = nil) -> Product {
         let name = ProductName.display(rawName)
         let key = ProductName.normalized(name)
-        if let existing = (products ?? []).filter({ $0.normalizedName == key }).min(by: Product.isOlder) {
+        if let existing = (products ?? []).filter({ $0.matches(normalizedName: key, size: size) }).min(by: Product.isOlder) {
             return existing
         }
         let product = insertRelated(Product.self)
         product.name = name
         product.normalizedName = key
+        product.size = size
         product.household = self
         return product
     }
@@ -59,12 +60,14 @@ extension Household {
 }
 
 extension ShoppingList {
-    /// Adds a product to the list. Adding something already on the list bumps
-    /// its quantity; adding something already in the basket puts it back.
+    /// Adds a product to the list, reading a size off the name ("Milk 2L").
+    /// Adding something already on the list bumps its quantity; adding
+    /// something already in the basket puts it back.
     @discardableResult
     func addItem(named rawName: String) -> Item? {
-        guard let household, !ProductName.display(rawName).isEmpty else { return nil }
-        return add(household.product(named: rawName))
+        let (name, size) = ProductSize.split(rawName)
+        guard let household, !name.isEmpty else { return nil }
+        return add(household.product(named: name, size: size))
     }
 
     @discardableResult
@@ -90,7 +93,7 @@ extension ShoppingList {
 }
 
 extension Item {
-    var displayName: String { product?.name ?? "" }
+    var displayName: String { product?.title ?? "" }
 
     func setChecked(_ checked: Bool) {
         isChecked = checked

@@ -146,8 +146,11 @@ extension PersistenceController {
 
         let weekly = household.addList()
         weekly.name = "Weekly Shop"
-        for name in ["Semi-skimmed milk", "Sourdough", "Bananas", "Free-range eggs", "Cheddar"] {
-            weekly.addItem(named: name)
+        for (name, category) in [
+            ("Semi-skimmed milk 4 pints", ProductCategory.dairyAndEggs), ("Sourdough 800g", .bakery), ("Bananas", .fruitAndVeg),
+            ("Free-range eggs 6 pack", .dairyAndEggs), ("Cheddar 400g", .dairyAndEggs),
+        ] {
+            weekly.addItem(named: name)?.product?.category = category
         }
         weekly.addItem(named: "Bananas")
         weekly.addItem(named: "Coffee beans")?.setChecked(true)
@@ -169,13 +172,14 @@ extension PersistenceController {
         coop.travel = .walk
         coop.travelMinutes = 4
         for (name, aldiPrice, coopPrice) in [
-            ("Semi-skimmed milk", 145, 175), ("Sourdough", 129, 250), ("Bananas", 17, 25), ("Cheddar", 299, 425),
+            ("Semi-skimmed milk 4 pints", 145, 175), ("Sourdough 800g", 129, 250), ("Bananas", 17, 25), ("Cheddar 400g", 299, 425),
         ] {
-            let product = household.product(named: name)
+            let (name, size) = ProductSize.split(name)
+            let product = household.product(named: name, size: size)
             aldi.recordPrice(Int64(aldiPrice), for: product)
             coop.recordPrice(Int64(coopPrice), for: product)
         }
-        coop.recordPrice(325, for: household.product(named: "Free-range eggs"))
+        coop.recordPrice(325, for: household.product(named: "Free-range eggs", size: ProductSize(amount: 6, unit: .pack)))
 
         for (daysAgo, store, spent, saved, carbon, carbonSaved) in [
             (2, aldi, 4_120, 980, 4.8, -4.8), (9, coop, 1_460, -210, 0, 4.8), (16, aldi, 5_235, 1_140, 4.8, -4.8),

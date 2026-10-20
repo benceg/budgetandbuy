@@ -60,6 +60,9 @@ struct RootView: View {
         .onChange(of: households.map(\.objectID), initial: true) {
             noticeJoinedHouseholds()
         }
+        .task {
+            ProductCategorizer.shared.categorizeAll(in: context)
+        }
         .alert(
             "Move Your Lists to “\(joinedHousehold?.name ?? "")”?",
             isPresented: Binding(

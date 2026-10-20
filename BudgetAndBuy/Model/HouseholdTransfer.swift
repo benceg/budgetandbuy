@@ -10,7 +10,7 @@ extension Household {
 
         var copies: [NSManagedObjectID: Product] = [:]
         for product in (products ?? []).sorted(by: Product.isOlder) {
-            let copy = destination.product(named: product.name ?? "")
+            let copy = destination.product(named: product.name ?? "", size: product.size)
             if copy.categoryID == nil { copy.categoryID = product.categoryID }
             copies[product.objectID] = copy
         }

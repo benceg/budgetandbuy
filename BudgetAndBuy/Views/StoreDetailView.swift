@@ -25,7 +25,7 @@ struct StoreDetailView: View {
         Dictionary(grouping: prices.filter { $0.product != nil }) { $0.product!.objectID }
             .values
             .compactMap { $0.max(by: Price.isOlder) }
-            .sorted { ($0.product?.name ?? "").localizedStandardCompare($1.product?.name ?? "") == .orderedAscending }
+            .sorted { ($0.product?.title ?? "").localizedStandardCompare($1.product?.title ?? "") == .orderedAscending }
     }
 
     var body: some View {
@@ -55,11 +55,16 @@ struct StoreDetailView: View {
                         }
                     } label: {
                         HStack {
-                            Text(price.product?.name ?? "")
+                            Text(price.product?.title ?? "")
                             Spacer()
                             VStack(alignment: .trailing) {
                                 Text(Money.format(price.amountMinor))
                                     .monospacedDigit()
+                                if let size = price.product?.size {
+                                    Text(size.unitPrice(of: price.amountMinor))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                                 if let seen = price.createdAt {
                                     Text(seen, format: .relative(presentation: .named))
                                         .font(.caption)

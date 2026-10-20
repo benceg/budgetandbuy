@@ -1,7 +1,9 @@
 import Foundation
+import FoundationModels
 
 /// Grocery aisles, loosely following Tesco's departments. Stored on Product by
 /// raw value, so never rename a case once it has shipped.
+@Generable
 enum ProductCategory: String, CaseIterable, Identifiable {
     case fruitAndVeg
     case meatAndFish
@@ -73,5 +75,15 @@ extension Product {
     var category: ProductCategory? {
         get { categoryID.flatMap(ProductCategory.init(rawValue:)) }
         set { categoryID = newValue?.rawValue }
+    }
+}
+
+extension ProductCategory {
+    /// Groups items by aisle, in aisle order. Uncategorised items join Other.
+    static func aisles(of items: [Item]) -> [(category: ProductCategory, items: [Item])] {
+        let grouped = Dictionary(grouping: items) { $0.product?.category ?? .other }
+        return allCases.compactMap { category in
+            grouped[category].map { (category, $0) }
+        }
     }
 }

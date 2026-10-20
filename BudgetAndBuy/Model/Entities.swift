@@ -58,6 +58,9 @@ final class Product: NSManagedObject, Timestamped {
     @NSManaged var createdAt: Date?
     @NSManaged var name: String?
     @NSManaged var normalizedName: String?
+    /// Zero when the product has no size.
+    @NSManaged var sizeAmount: Double
+    @NSManaged var sizeUnit: String?
     @NSManaged var categoryID: String?
     @NSManaged var household: Household?
     @NSManaged var items: Set<Item>?
