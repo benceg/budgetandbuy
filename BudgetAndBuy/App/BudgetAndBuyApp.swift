@@ -25,12 +25,14 @@ struct BudgetAndBuyApp: App {
 #if DEBUG
 /// Launch arguments for exploring the UI in the simulator:
 /// -sampleData uses in-memory sample data, shopping at the Co-op;
-/// -openFirstList opens the first list; -compare then opens Compare Stores.
+/// -openFirstList opens the first list; -compare then opens Compare Stores;
+/// -openStats opens Savings.
 enum DebugLaunch {
     private static let arguments = ProcessInfo.processInfo.arguments
     static let usesSampleData = arguments.contains("-sampleData")
     static let opensFirstList = arguments.contains("-openFirstList")
     static let opensComparison = arguments.contains("-compare")
+    static let opensStats = arguments.contains("-openStats")
 }
 #endif
 

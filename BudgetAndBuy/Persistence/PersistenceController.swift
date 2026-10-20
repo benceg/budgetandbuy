@@ -176,6 +176,23 @@ extension PersistenceController {
             coop.recordPrice(Int64(coopPrice), for: product)
         }
         coop.recordPrice(325, for: household.product(named: "Free-range eggs"))
+
+        for (daysAgo, store, spent, saved, carbon, carbonSaved) in [
+            (2, aldi, 4_120, 980, 4.8, -4.8), (9, coop, 1_460, -210, 0, 4.8), (16, aldi, 5_235, 1_140, 4.8, -4.8),
+        ] {
+            let trip = household.insertRelated(Trip.self)
+            trip.household = household
+            trip.store = store
+            trip.storeName = store.name
+            trip.listName = weekly.name
+            trip.travelMode = store.travelMode
+            trip.createdAt = Calendar.current.date(byAdding: .day, value: -daysAgo, to: .now)
+            trip.spentMinor = Int64(spent)
+            trip.savedMinor = Int64(saved)
+            trip.comparedStoreName = store == aldi ? coop.name : aldi.name
+            trip.carbonKg = carbon
+            trip.carbonSavedKg = carbonSaved
+        }
         #if DEBUG
         if DebugLaunch.usesSampleData {
             UserDefaults.standard.set(coop.uuid?.uuidString, forKey: "shoppingStoreID")

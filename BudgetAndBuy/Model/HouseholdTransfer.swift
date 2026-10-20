@@ -1,10 +1,10 @@
 import CoreData
 
 extension Household {
-    /// Moves every list, product, store and price into another household, such
-    /// as one you've just joined. Households can live in different persistent
-    /// stores, which can't be related, so this copies the objects across and
-    /// deletes the originals.
+    /// Moves every list, product, store, price and trip into another household,
+    /// such as one you've just joined. Households can live in different
+    /// persistent stores, which can't be related, so this copies the objects
+    /// across and deletes the originals.
     func moveContents(to destination: Household) {
         guard destination != self, let context = managedObjectContext else { return }
 
@@ -30,8 +30,10 @@ extension Household {
             context.delete(list)
         }
 
+        var storeCopies: [NSManagedObjectID: Store] = [:]
         for store in (stores ?? []).sorted(by: Store.isOlder) {
             let copy = destination.addStore()
+            storeCopies[store.objectID] = copy
             copy.name = store.name
             copy.colorName = store.colorName
             copy.travelMode = store.travelMode
@@ -46,6 +48,24 @@ extension Household {
                 priceCopy.store = copy
             }
             context.delete(store)
+        }
+
+        for trip in trips ?? [] {
+            let copy = destination.insertRelated(Trip.self)
+            copy.createdAt = trip.createdAt
+            copy.storeName = trip.storeName
+            copy.listName = trip.listName
+            copy.travelMode = trip.travelMode
+            copy.spentMinor = trip.spentMinor
+            copy.itemCount = trip.itemCount
+            copy.pricedCount = trip.pricedCount
+            copy.savedMinor = trip.savedMinor
+            copy.comparedStoreName = trip.comparedStoreName
+            copy.carbonKg = trip.carbonKg
+            copy.carbonSavedKg = trip.carbonSavedKg
+            copy.store = trip.store.flatMap { storeCopies[$0.objectID] }
+            copy.household = destination
+            context.delete(trip)
         }
 
         for product in products ?? [] {

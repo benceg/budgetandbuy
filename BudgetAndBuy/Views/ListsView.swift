@@ -8,6 +8,7 @@ struct ListsView: View {
     @Environment(\.managedObjectContext) private var context
     @FetchRequest private var lists: FetchedResults<ShoppingList>
     @FetchRequest private var stores: FetchedResults<Store>
+    @FetchRequest private var trips: FetchedResults<Trip>
     @State private var isAddingList = false
     @State private var isAddingStore = false
     @State private var isShowingHousehold = false
@@ -23,6 +24,10 @@ struct ListsView: View {
             predicate: NSPredicate(format: "household == %@", household),
             animation: .default
         )
+        _trips = FetchRequest(
+            sortDescriptors: [],
+            predicate: NSPredicate(format: "household == %@", household)
+        )
         _stores = FetchRequest(
             sortDescriptors: [NSSortDescriptor(key: "name", ascending: true, selector: #selector(NSString.localizedStandardCompare(_:)))],
             predicate: NSPredicate(format: "household == %@", household),
@@ -33,6 +38,22 @@ struct ListsView: View {
     var body: some View {
         NavigationStack(path: $path) {
             List {
+                if !trips.isEmpty {
+                    let stats = TripStats(trips: trips, period: .year)
+                    Section {
+                        NavigationLink(value: StatsRoute()) {
+                            Grid(horizontalSpacing: 12) {
+                                GridRow {
+                                    StatTile(title: "Saved This Year", value: Money.format(stats.savedMinor), symbolName: "banknote.fill", color: .green)
+                                    StatTile(title: "CO₂ Avoided", value: CarbonFormat.format(stats.carbonAvoidedKg), symbolName: "leaf.fill", color: .mint)
+                                }
+                            }
+                        }
+                        .navigationLinkIndicatorVisibility(.hidden)
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                }
                 if !lists.isEmpty {
                     Section("Lists") {
                         ForEach(lists, id: \.objectID) { list in
@@ -78,6 +99,9 @@ struct ListsView: View {
             .navigationDestination(for: Store.self) { store in
                 StoreDetailView(store: store)
             }
+            .navigationDestination(for: StatsRoute.self) { _ in
+                StatsView(household: household)
+            }
             .overlay {
                 if lists.isEmpty && stores.isEmpty {
                     ContentUnavailableView {
@@ -109,6 +133,7 @@ struct ListsView: View {
             #if DEBUG
             .task {
                 if DebugLaunch.opensFirstList, let first = lists.first { path.append(first) }
+                if DebugLaunch.opensStats { path.append(StatsRoute()) }
             }
             #endif
             .sheet(isPresented: $isAddingList) {
@@ -173,6 +198,8 @@ private struct ListRow: View {
         }
     }
 }
+
+private struct StatsRoute: Hashable {}
 
 private struct StoreRow: View {
     @ObservedObject var store: Store

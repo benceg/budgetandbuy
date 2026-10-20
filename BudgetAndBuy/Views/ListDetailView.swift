@@ -19,6 +19,7 @@ struct ListDetailView: View {
     @State private var isConfirmingDeletion = false
     @State private var isAddingStore = false
     @State private var isComparing = false
+    @State private var finishedTrip: FinishedTrip?
     @State private var pricing: PricingTarget?
 
     init(list: ShoppingList) {
@@ -119,6 +120,9 @@ struct ListDetailView: View {
         .sheet(isPresented: $isComparing) {
             CompareView(list: list)
         }
+        .sheet(item: $finishedTrip) { finished in
+            TripSummaryView(trip: finished.trip)
+        }
         #if DEBUG
         .task {
             if DebugLaunch.opensComparison { isComparing = true }
@@ -217,6 +221,12 @@ struct ListDetailView: View {
             }
         }
         ToolbarSpacer(.flexible, placement: .bottomBar)
+        if shoppingStore != nil && !inBasket.isEmpty {
+            ToolbarItem(placement: .bottomBar) {
+                Button("Finish Shopping", action: finishShopping)
+                    .buttonStyle(.glassProminent)
+            }
+        }
         ToolbarItem(placement: .bottomBar) {
             Menu {
                 Picker("Shopping At", selection: $shoppingStoreID) {
@@ -250,6 +260,14 @@ struct ListDetailView: View {
         context.saveIfNeeded()
     }
 
+    private func finishShopping() {
+        guard let store = shoppingStore,
+              let trip = list.finishShopping(at: store, stores: Array(stores)) else { return }
+        context.saveIfNeeded()
+        shoppingStoreID = ""
+        finishedTrip = FinishedTrip(trip: trip)
+    }
+
     private func editPrice(of item: Item) {
         guard let store = shoppingStore, let product = item.product else { return }
         pricing = PricingTarget(product: product, store: store)
@@ -278,6 +296,11 @@ struct ListDetailView: View {
         context.delete(list)
         context.saveIfNeeded()
     }
+}
+
+private struct FinishedTrip: Identifiable {
+    let trip: Trip
+    var id: NSManagedObjectID { trip.objectID }
 }
 
 private struct ItemRow: View {

@@ -11,6 +11,7 @@ final class Household: NSManagedObject, Timestamped {
     @NSManaged var lists: Set<ShoppingList>?
     @NSManaged var products: Set<Product>?
     @NSManaged var stores: Set<Store>?
+    @NSManaged var trips: Set<Trip>?
 
     override func awakeFromInsert() {
         super.awakeFromInsert()
@@ -79,6 +80,7 @@ final class Store: NSManagedObject, Timestamped {
     @NSManaged var distanceKm: Double
     @NSManaged var household: Household?
     @NSManaged var prices: Set<Price>?
+    @NSManaged var trips: Set<Trip>?
 
     override func awakeFromInsert() {
         super.awakeFromInsert()
@@ -94,6 +96,33 @@ final class Price: NSManagedObject, Timestamped {
     @NSManaged var createdAt: Date?
     @NSManaged var amountMinor: Int64
     @NSManaged var product: Product?
+    @NSManaged var store: Store?
+
+    override func awakeFromInsert() {
+        super.awakeFromInsert()
+        stamp()
+    }
+}
+
+/// A finished shop. Names are copied rather than related so the record
+/// survives the store or list being renamed or deleted.
+@objc(Trip)
+final class Trip: NSManagedObject, Timestamped {
+    @NSManaged var uuid: UUID?
+    @NSManaged var createdAt: Date?
+    @NSManaged var storeName: String?
+    @NSManaged var listName: String?
+    @NSManaged var travelMode: String?
+    @NSManaged var spentMinor: Int64
+    @NSManaged var itemCount: Int16
+    @NSManaged var pricedCount: Int16
+    /// Positive when this trip cost less than shopping at `comparedStoreName`.
+    @NSManaged var savedMinor: Int64
+    @NSManaged var comparedStoreName: String?
+    @NSManaged var carbonKg: Double
+    /// Positive when this trip emitted less than going to `comparedStoreName`.
+    @NSManaged var carbonSavedKg: Double
+    @NSManaged var household: Household?
     @NSManaged var store: Store?
 
     override func awakeFromInsert() {

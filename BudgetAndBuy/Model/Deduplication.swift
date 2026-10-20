@@ -16,6 +16,7 @@ extension NSManagedObjectContext {
             for list in duplicate.lists ?? [] { list.household = keeper }
             for product in duplicate.products ?? [] { product.household = keeper }
             for store in duplicate.stores ?? [] { store.household = keeper }
+            for trip in duplicate.trips ?? [] { trip.household = keeper }
             processPendingChanges()
             delete(duplicate)
         }
