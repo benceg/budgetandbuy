@@ -5,6 +5,15 @@ import UIKit
 /// SwiftUI has no hook for accepting iCloud share invitations, so the app
 /// installs a scene delegate to receive them.
 final class AppDelegate: NSObject, UIApplicationDelegate {
+    // Runs on background launches too, so an arrival that woke the app is delivered.
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        Task { await StoreArrivalMonitor.shared.refresh() }
+        return true
+    }
+
     func application(
         _ application: UIApplication,
         configurationForConnecting connectingSceneSession: UISceneSession,

@@ -4,6 +4,10 @@
 <dict>
 	<key>CKSharingSupported</key>
 	<true/>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Budget &amp; Buy notices when you arrive at one of your stores and switches on shopping mode, even when the app is closed. Your location is only checked on your iPhone.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Budget &amp; Buy uses your location to find your stores on the map.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

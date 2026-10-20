@@ -51,6 +51,9 @@
         <attribute name="colorName" optional="YES" attributeType="String" defaultValueString="blue"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="distanceKm" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="hasLocation" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="latitude" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="longitude" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
         <attribute name="name" optional="YES" attributeType="String"/>
         <attribute name="travelMinutes" attributeType="Integer 16" defaultValueString="10" usesScalarValueType="YES"/>
         <attribute name="travelMode" optional="YES" attributeType="String" defaultValueString="drive"/>

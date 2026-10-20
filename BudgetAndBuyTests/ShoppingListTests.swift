@@ -1,4 +1,5 @@
 import CoreData
+import CoreLocation
 import Testing
 import UIKit
 @testable import BudgetAndBuy
@@ -224,6 +225,23 @@ struct ShoppingListTests {
         #expect(moved.travelMinutes == 7)
         let milk = try #require(joined.products?.first)
         #expect(milk.latestPrice(at: moved)?.amountMinor == 145)
+    }
+
+    @Test func storesRememberAndForgetTheirLocation() throws {
+        let store = household.addStore()
+        #expect(store.coordinate == nil)
+
+        store.coordinate = CLLocationCoordinate2D(latitude: 51.4826, longitude: -0.0077)
+        let coordinate = try #require(store.coordinate)
+        #expect(coordinate.latitude == 51.4826)
+        #expect(coordinate.longitude == -0.0077)
+
+        let joined = Household.create(in: context)
+        household.moveContents(to: joined)
+        #expect(joined.stores?.first?.coordinate?.latitude == 51.4826)
+
+        store.coordinate = nil
+        #expect(!store.hasLocation)
     }
 
     @Test(arguments: ProductCategory.allCases)

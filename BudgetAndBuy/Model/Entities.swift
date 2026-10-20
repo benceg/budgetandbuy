@@ -81,6 +81,9 @@ final class Store: NSManagedObject, Timestamped {
     @NSManaged var travelMode: String?
     @NSManaged var travelMinutes: Int16
     @NSManaged var distanceKm: Double
+    @NSManaged var hasLocation: Bool
+    @NSManaged var latitude: Double
+    @NSManaged var longitude: Double
     @NSManaged var household: Household?
     @NSManaged var prices: Set<Price>?
     @NSManaged var trips: Set<Trip>?

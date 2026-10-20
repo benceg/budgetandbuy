@@ -1,4 +1,5 @@
 import CoreData
+import CoreLocation
 import Foundation
 
 /// Prices are stored as whole minor units (pence) so sums are exact.
@@ -78,6 +79,15 @@ extension Store {
     }
 
     var journey: String { travel.journey(minutes: travelMinutes) }
+
+    var coordinate: CLLocationCoordinate2D? {
+        get { hasLocation ? CLLocationCoordinate2D(latitude: latitude, longitude: longitude) : nil }
+        set {
+            hasLocation = newValue != nil
+            latitude = newValue?.latitude ?? 0
+            longitude = newValue?.longitude ?? 0
+        }
+    }
 
     /// The newest price for each product seen here.
     var currentPrices: [Price] {

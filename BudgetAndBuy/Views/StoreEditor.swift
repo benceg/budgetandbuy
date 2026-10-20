@@ -1,4 +1,5 @@
 import CoreData
+import MapKit
 import SwiftUI
 
 /// Creates a store, or edits its name, colour and how you get there.
@@ -13,6 +14,9 @@ struct StoreEditor: View {
     @State private var travel: TravelMode
     @State private var minutes: Int
     @State private var distanceText: String
+    @State private var coordinate: CLLocationCoordinate2D?
+    @State private var isPickingLocation = false
+    @AppStorage(StoreArrivalMonitor.enabledKey) private var noticesArrivals = false
     @FocusState private var isNameFocused: Bool
 
     /// Distances are stored in kilometres but entered in the local road unit.
@@ -27,6 +31,7 @@ struct StoreEditor: View {
         _travel = State(initialValue: .drive)
         _minutes = State(initialValue: 10)
         _distanceText = State(initialValue: "")
+        _coordinate = State(initialValue: nil)
     }
 
     init(store: Store) {
@@ -40,6 +45,7 @@ struct StoreEditor: View {
         _distanceText = State(initialValue: store.distanceKm > 0
             ? distance.value.formatted(.number.precision(.fractionLength(0...1)))
             : "")
+        _coordinate = State(initialValue: store.coordinate)
     }
 
     private var trimmedName: String { ProductName.display(name) }
@@ -104,6 +110,36 @@ struct StoreEditor: View {
                 } footer: {
                     Text("From home, one way. Used to weigh up savings against the trip, and to work out the carbon you save by shopping closer to home.")
                 }
+
+                Section {
+                    if let coordinate {
+                        Map(position: .constant(.region(MKCoordinateRegion(
+                            center: coordinate, latitudinalMeters: 400, longitudinalMeters: 400
+                        ))), interactionModes: []) {
+                            Marker(trimmedName, systemImage: "storefront.fill", coordinate: coordinate)
+                                .tint(ListAppearance.color(named: colorName))
+                        }
+                        .frame(height: 160)
+                        .listRowInsets(EdgeInsets())
+                        Button("Change Location…") { isPickingLocation = true }
+                        Button("Remove Location", role: .destructive) { self.coordinate = nil }
+                    } else {
+                        Button("Set Location…", systemImage: "mappin.and.ellipse") { isPickingLocation = true }
+                    }
+                    Toggle("Notice When I Arrive", isOn: Binding(
+                        get: { noticesArrivals },
+                        set: { enabled in Task { await StoreArrivalMonitor.shared.setEnabled(enabled) } }
+                    ))
+                } header: {
+                    Text("Location")
+                } footer: {
+                    Text("When you arrive at a store with a location, Budget & Buy switches on shopping mode there and lets you know. Applies to all your stores. Your location is only checked on your iPhone.")
+                }
+            }
+            .sheet(isPresented: $isPickingLocation) {
+                StoreLocationPicker(storeName: trimmedName, initial: coordinate) { picked in
+                    coordinate = picked
+                }
             }
             .navigationTitle(store == nil ? "New Store" : "Store Info")
             .navigationBarTitleDisplayMode(.inline)
@@ -129,7 +165,9 @@ struct StoreEditor: View {
         target.travel = travel
         target.travelMinutes = Int16(minutes)
         target.distanceKm = distanceKm
+        target.coordinate = coordinate
         context.saveIfNeeded()
+        Task { await StoreArrivalMonitor.shared.refresh() }
         dismiss()
     }
 }
