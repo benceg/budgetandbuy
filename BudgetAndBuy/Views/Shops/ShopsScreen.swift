@@ -83,7 +83,7 @@ struct ShopsScreen: View {
                     }
                 }
                 Button { isAdding = true } label: {
-                    Label("Add a Shop", systemImage: "plus.circle.fill")
+                    Label("Add a Shop", systemImage: "plus.circle")
                         .font(.body.weight(.semibold))
                         .foregroundStyle(Color.brandInk)
                 }

@@ -20,7 +20,7 @@ struct ShoppingLiveActivity: Widget {
             let color = ListAppearance.color(named: context.attributes.colorName)
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Label(context.attributes.storeName, systemImage: "storefront.fill")
+                    Label(context.attributes.storeName, systemImage: "storefront")
                         .font(.headline)
                         .foregroundStyle(color)
                         .lineLimit(1)
@@ -38,14 +38,14 @@ struct ShoppingLiveActivity: Widget {
                         .lineLimit(1)
                 }
             } compactLeading: {
-                Image(systemName: "basket.fill")
+                Image(systemName: "basket")
                     .foregroundStyle(color)
             } compactTrailing: {
                 Text(Money.format(context.state.basketMinor))
                     .monospacedDigit()
                     .contentTransition(.numericText())
             } minimal: {
-                Image(systemName: "basket.fill")
+                Image(systemName: "basket")
                     .foregroundStyle(color)
             }
             .keylineTint(color)

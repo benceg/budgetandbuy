@@ -76,7 +76,7 @@ struct SavingsScreen: View {
             }
             Divider().overlay(Color.onBrand.opacity(0.25))
             HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "leaf.fill")
+                Image(systemName: "leaf")
                     .font(.title3)
                     .foregroundStyle(Color.brand)
                     .frame(width: 40, height: 40)

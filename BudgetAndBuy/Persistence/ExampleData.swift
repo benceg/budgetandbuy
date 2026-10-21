@@ -129,7 +129,7 @@ enum ExampleData {
             let list = household.addList()
             list.name = "Example Weekly Shop"
             list.colorName = "sage"
-            list.symbolName = "cart.fill"
+            list.symbolName = "cart"
             list.budgetMinor = 6_000
             return list
         }()

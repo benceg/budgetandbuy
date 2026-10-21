@@ -7,11 +7,17 @@ enum ListAppearance {
         "sea", "slate", "indigo", "lavender", "orchid", "rose",
     ]
 
+    /// Outlined, like the app's other icons. Lists saved with the filled
+    /// versions are shown outlined by `outlined(_:)`.
     static let symbolNames = [
-        "cart.fill", "basket.fill", "bag.fill", "carrot.fill", "fork.knife", "cup.and.saucer.fill",
-        "wineglass.fill", "birthday.cake.fill", "frying.pan.fill", "flame.fill", "leaf.fill", "house.fill",
-        "gift.fill", "pawprint.fill", "stroller.fill", "tshirt.fill", "heart.fill", "star.fill",
+        "cart", "basket", "bag", "carrot", "fork.knife", "cup.and.saucer",
+        "wineglass", "birthday.cake", "frying.pan", "flame", "leaf", "house",
+        "gift", "pawprint", "stroller", "tshirt", "heart", "star",
     ]
+
+    static func outlined(_ symbolName: String) -> String {
+        symbolName.hasSuffix(".fill") ? String(symbolName.dropLast(5)) : symbolName
+    }
 
     /// The swatch, exactly, in light and dark mode.
     static func color(named name: String?) -> Color {

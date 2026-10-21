@@ -170,7 +170,7 @@ extension PersistenceController {
         let party = household.addList()
         party.name = "Saturday BBQ"
         party.colorName = "apricot"
-        party.symbolName = "flame.fill"
+        party.symbolName = "flame"
         party.addItem(named: "Burgers")
 
         let aldi = household.addStore()

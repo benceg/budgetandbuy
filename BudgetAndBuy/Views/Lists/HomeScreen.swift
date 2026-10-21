@@ -43,7 +43,7 @@ struct HomeScreen: View {
                     Button {
                         isAddingHousehold = true
                     } label: {
-                        Label("New Household", systemImage: "plus.circle.fill")
+                        Label("New Household", systemImage: "plus.circle")
                             .font(.body.weight(.semibold))
                             .foregroundStyle(Color.brandInk)
                     }
@@ -179,7 +179,7 @@ private struct HouseholdSection: View {
                 }
             }
             Button(action: onNewList) {
-                Label("New List", systemImage: "plus.circle.fill")
+                Label("New List", systemImage: "plus.circle")
                     .font(.body.weight(.semibold))
                     .foregroundStyle(Color.brandInk)
             }
@@ -192,7 +192,7 @@ private struct HouseholdSection: View {
             }
         } header: {
             HStack(spacing: 10) {
-                Image(systemName: "house.fill")
+                Image(systemName: "house")
                     .font(.footnote)
                     .foregroundStyle(ListAppearance.foreground(named: household.colorName))
                     .frame(width: 28, height: 28)

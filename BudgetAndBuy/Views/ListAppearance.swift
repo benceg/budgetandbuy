@@ -4,7 +4,7 @@ extension ShoppingList {
     var color: Color { ListAppearance.color(named: colorName) }
     /// Its symbol's colour on `color`.
     var foreground: Color { ListAppearance.foreground(named: colorName) }
-    var symbol: String { symbolName ?? "cart.fill" }
+    var symbol: String { ListAppearance.outlined(symbolName ?? "cart") }
 }
 
 extension Store {

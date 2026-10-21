@@ -37,7 +37,7 @@ struct StoreLocationPicker: View {
                             .tag(result)
                     }
                     if let picked {
-                        Marker(storeName, systemImage: "storefront.fill", coordinate: picked)
+                        Marker(storeName, systemImage: "storefront", coordinate: picked)
                     }
                 }
                 .mapControls {

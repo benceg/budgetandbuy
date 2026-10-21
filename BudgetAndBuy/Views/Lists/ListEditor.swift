@@ -20,7 +20,7 @@ struct ListEditor: View {
         list = nil
         _name = State(initialValue: "")
         _colorName = State(initialValue: "sage")
-        _symbolName = State(initialValue: "cart.fill")
+        _symbolName = State(initialValue: "cart")
     }
 
     init(list: ShoppingList) {

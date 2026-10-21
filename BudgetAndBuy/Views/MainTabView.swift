@@ -20,21 +20,29 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: $tab) {
-            Tab("Home", systemImage: "house", value: AppTab.home) {
+            Tab(value: AppTab.home) {
                 HomeScreen(households: households, selectedHouseholdID: $selectedHouseholdID, tab: $tab)
+            } label: {
+                tabLabel("Home", symbol: "house", for: .home)
             }
             if let current {
-                Tab("Shops", systemImage: "storefront", value: AppTab.shops) {
+                Tab(value: AppTab.shops) {
                     // A new identity per household, so the screen fetches its shops.
                     ShopsScreen(household: current, households: households, selectedHouseholdID: $selectedHouseholdID)
                         .id(current.objectID)
+                } label: {
+                    tabLabel("Shops", symbol: "storefront", for: .shops)
                 }
-                Tab("Savings", systemImage: "leaf", value: AppTab.savings) {
+                Tab(value: AppTab.savings) {
                     SavingsScreen(household: current, households: households, selectedHouseholdID: $selectedHouseholdID)
                         .id(current.objectID)
+                } label: {
+                    tabLabel("Savings", symbol: "leaf", for: .savings)
                 }
-                Tab("Settings", systemImage: "gearshape", value: AppTab.settings) {
+                Tab(value: AppTab.settings) {
                     SettingsScreen(household: current)
+                } label: {
+                    tabLabel("Settings", symbol: "gearshape", for: .settings)
                 }
             }
         }
@@ -48,5 +56,15 @@ struct MainTabView: View {
             }
         }
         #endif
+    }
+
+    /// Outlined, except for the selected tab, which is filled.
+    private func tabLabel(_ title: LocalizedStringResource, symbol: String, for value: AppTab) -> some View {
+        Label {
+            Text(title)
+        } icon: {
+            Image(systemName: tab == value ? "\(symbol).fill" : symbol)
+                .environment(\.symbolVariants, .none)
+        }
     }
 }

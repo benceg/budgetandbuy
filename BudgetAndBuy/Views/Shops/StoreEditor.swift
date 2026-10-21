@@ -102,7 +102,7 @@ struct StoreEditor: View {
                         Map(position: .constant(.region(MKCoordinateRegion(
                             center: coordinate, latitudinalMeters: 400, longitudinalMeters: 400
                         ))), interactionModes: []) {
-                            Marker(trimmedName, systemImage: "storefront.fill", coordinate: coordinate)
+                            Marker(trimmedName, systemImage: "storefront", coordinate: coordinate)
                                 .tint(ListAppearance.color(named: colorName))
                         }
                         .frame(height: 160)

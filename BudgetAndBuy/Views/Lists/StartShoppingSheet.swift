@@ -33,7 +33,7 @@ struct StartShoppingSheet: View {
                     NavigationLink {
                         AddShopView(household: household, canCancel: false) { store in start(at: store) }
                     } label: {
-                        Label("Add a Shop", systemImage: "plus.circle.fill")
+                        Label("Add a Shop", systemImage: "plus.circle")
                             .font(.body.weight(.semibold))
                             .foregroundStyle(Color.brandInk)
                     }

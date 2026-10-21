@@ -765,7 +765,7 @@ private struct SuggestionRow: View {
                     .kerning(0.6)
                     .foregroundStyle(Color.inkSecondary)
             } else {
-                Image(systemName: "plus.circle.fill")
+                Image(systemName: "plus.circle")
                     .font(.title3)
                     .foregroundStyle(Color.brandInk)
             }
