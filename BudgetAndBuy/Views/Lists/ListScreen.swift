@@ -229,7 +229,7 @@ struct ListScreen: View {
             listID: list.objectID.uriRepresentation().absoluteString,
             listName: list.name ?? "",
             storeName: shoppingStore?.name ?? "",
-            colorName: shoppingStore?.colorName ?? "green"
+            colorName: shoppingStore?.colorName ?? "sage"
         )
     }
 

@@ -19,7 +19,7 @@ struct ListEditor: View {
         self.onCreate = onCreate
         list = nil
         _name = State(initialValue: "")
-        _colorName = State(initialValue: "green")
+        _colorName = State(initialValue: "sage")
         _symbolName = State(initialValue: "cart.fill")
     }
 
@@ -27,7 +27,7 @@ struct ListEditor: View {
         household = nil
         self.list = list
         _name = State(initialValue: list.name ?? "")
-        _colorName = State(initialValue: list.colorName ?? "green")
+        _colorName = State(initialValue: list.colorName ?? "sage")
         _symbolName = State(initialValue: list.symbol)
     }
 
@@ -38,7 +38,7 @@ struct ListEditor: View {
             Form {
                 Section {
                     VStack(spacing: 20) {
-                        ListIcon(symbolName: symbolName, color: ListAppearance.color(named: colorName), size: 96)
+                        ListIcon(symbolName: symbolName, color: ListAppearance.color(named: colorName), foreground: ListAppearance.foreground(named: colorName), size: 96)
                         TextField("List Name", text: $name)
                             .font(.title2.bold())
                             .multilineTextAlignment(.center)
@@ -57,8 +57,8 @@ struct ListEditor: View {
                 Section {
                     SwatchGrid(items: ListAppearance.colorNames, selection: $colorName) { name in
                         Circle()
-                            .fill(ListAppearance.color(named: name).gradient)
-                            .accessibilityLabel(name.capitalized)
+                            .fill(ListAppearance.color(named: name))
+                            .accessibilityLabel(ListAppearance.title(named: name))
                     }
                 }
                 .onSurface()

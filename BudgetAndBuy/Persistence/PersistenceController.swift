@@ -160,19 +160,19 @@ extension PersistenceController {
 
         let party = household.addList()
         party.name = "Saturday BBQ"
-        party.colorName = "orange"
+        party.colorName = "apricot"
         party.symbolName = "flame.fill"
         party.addItem(named: "Burgers")
 
         let aldi = household.addStore()
         aldi.name = "Aldi"
-        aldi.colorName = "blue"
+        aldi.colorName = "slate"
         aldi.travelMinutes = 20
         aldi.distanceKm = 14
         aldi.coordinate = CLLocationCoordinate2D(latitude: 51.4881, longitude: -0.0489)
         let coop = household.addStore()
         coop.name = "Co-op"
-        coop.colorName = "teal"
+        coop.colorName = "sea"
         coop.travel = .walk
         coop.travelMinutes = 4
         coop.distanceKm = 0.3

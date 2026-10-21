@@ -27,7 +27,7 @@ struct StoreEditor: View {
         self.store = store
         self.onDelete = onDelete
         _name = State(initialValue: store.name ?? "")
-        _colorName = State(initialValue: store.colorName ?? "blue")
+        _colorName = State(initialValue: store.colorName ?? "slate")
         _travel = State(initialValue: store.travel)
         _minutes = State(initialValue: Int(store.travelMinutes))
         let distance = Measurement(value: store.distanceKm, unit: UnitLength.kilometers).converted(to: Self.distanceUnit)
@@ -67,8 +67,8 @@ struct StoreEditor: View {
                 Section {
                     SwatchGrid(items: ListAppearance.colorNames, selection: $colorName) { name in
                         Circle()
-                            .fill(ListAppearance.color(named: name).gradient)
-                            .accessibilityLabel(name.capitalized)
+                            .fill(ListAppearance.color(named: name))
+                            .accessibilityLabel(ListAppearance.title(named: name))
                     }
                 }
                 .onSurface()

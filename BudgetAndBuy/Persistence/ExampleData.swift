@@ -18,13 +18,13 @@ enum ExampleData {
         let priceLevel: Double
     }
 
-    static let aldi = Shop(name: "Aldi Coulsdon", colorName: "blue", travel: .drive, minutes: 6, kilometres: 2.2,
+    static let aldi = Shop(name: "Aldi Coulsdon", colorName: "slate", travel: .drive, minutes: 6, kilometres: 2.2,
                            coordinate: CLLocationCoordinate2D(latitude: 51.3265, longitude: -0.1368), priceLevel: 0.82)
-    static let sainsburys = Shop(name: "Sainsbury’s Warlingham", colorName: "orange", travel: .drive, minutes: 15, kilometres: 6.8,
+    static let sainsburys = Shop(name: "Sainsbury’s Warlingham", colorName: "apricot", travel: .drive, minutes: 15, kilometres: 6.8,
                                  coordinate: CLLocationCoordinate2D(latitude: 51.3177, longitude: -0.0640), priceLevel: 1.0)
-    static let tesco = Shop(name: "Tesco Express Coulsdon", colorName: "red", travel: .walk, minutes: 5, kilometres: 0.4,
+    static let tesco = Shop(name: "Tesco Express Coulsdon", colorName: "coral", travel: .walk, minutes: 5, kilometres: 0.4,
                             coordinate: CLLocationCoordinate2D(latitude: 51.3196, longitude: -0.1392), priceLevel: 1.14)
-    static let waitrose = Shop(name: "Waitrose Coulsdon", colorName: "green", travel: .walk, minutes: 8, kilometres: 0.6,
+    static let waitrose = Shop(name: "Waitrose Coulsdon", colorName: "olive", travel: .walk, minutes: 8, kilometres: 0.6,
                                coordinate: CLLocationCoordinate2D(latitude: 51.3188, longitude: -0.1381), priceLevel: 1.27)
 
     static let shops = [aldi, sainsburys, tesco, waitrose]
@@ -122,7 +122,7 @@ enum ExampleData {
         let weekly = (household.lists ?? []).first { $0.name == "Example Weekly Shop" } ?? {
             let list = household.addList()
             list.name = "Example Weekly Shop"
-            list.colorName = "green"
+            list.colorName = "sage"
             list.symbolName = "cart.fill"
             list.budgetMinor = 6_000
             return list

@@ -128,7 +128,7 @@ private struct PlaceRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            StoreBadge(name: place.name, colorName: "green", size: 40)
+            StoreBadge(name: place.name, colorName: "sage", size: 40)
             VStack(alignment: .leading, spacing: 2) {
                 Text(place.name ?? "")
                     .font(.headline)
@@ -176,7 +176,7 @@ struct ShopSetupView: View {
         self.onAdded = onAdded
         _name = State(initialValue: ShopSetupView.shortName(choice.name))
         let used = Set((household.stores ?? []).compactMap(\.colorName))
-        _colorName = State(initialValue: ListAppearance.colorNames.first { !used.contains($0) } ?? "blue")
+        _colorName = State(initialValue: ListAppearance.colorNames.first { !used.contains($0) } ?? "slate")
         _travel = State(initialValue: choice.place.map(finder.likelyMode(to:)) ?? .drive)
     }
 
@@ -227,23 +227,10 @@ struct ShopSetupView: View {
     }
 
     private var colours: some View {
-        HStack(spacing: 10) {
-            ForEach(ListAppearance.colorNames.prefix(8), id: \.self) { name in
-                Button {
-                    colorName = name
-                } label: {
-                    Circle()
-                        .fill(ListAppearance.color(named: name))
-                        .frame(width: 28, height: 28)
-                        .padding(3)
-                        .overlay {
-                            if name == colorName { Circle().strokeBorder(Color.ink.opacity(0.4), lineWidth: 2) }
-                        }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(name.capitalized)
-                .accessibilityAddTraits(name == colorName ? .isSelected : [])
-            }
+        SwatchGrid(items: ListAppearance.colorNames, selection: $colorName) { name in
+            Circle()
+                .fill(ListAppearance.color(named: name))
+                .accessibilityLabel(ListAppearance.title(named: name))
         }
     }
 

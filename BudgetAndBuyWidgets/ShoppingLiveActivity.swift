@@ -61,7 +61,7 @@ private struct LockScreenView: View {
         HStack(spacing: 12) {
             Text(String(context.attributes.storeName.prefix(1)).uppercased())
                 .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(ListAppearance.foreground(named: context.attributes.colorName))
                 .frame(width: 44, height: 44)
                 .background(color, in: .circle)
                 .accessibilityHidden(true)

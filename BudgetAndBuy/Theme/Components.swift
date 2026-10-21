@@ -126,7 +126,7 @@ struct StoreBadge: View {
     var body: some View {
         Text(String((name ?? "").trimmingCharacters(in: .whitespaces).prefix(1)).uppercased())
             .font(.system(size: size * 0.46, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
+            .foregroundStyle(ListAppearance.foreground(named: colorName))
             .frame(width: size, height: size)
             .background(ListAppearance.color(named: colorName), in: .circle)
             .accessibilityHidden(true)

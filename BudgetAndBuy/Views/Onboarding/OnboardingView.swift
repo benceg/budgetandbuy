@@ -311,7 +311,7 @@ private struct ShopsStep: View {
         let used = Set(stores.compactMap(\.colorName))
         let store = household.addStore()
         store.name = ShopSetupView.shortName(place.name ?? "")
-        store.colorName = ListAppearance.colorNames.first { !used.contains($0) } ?? "blue"
+        store.colorName = ListAppearance.colorNames.first { !used.contains($0) } ?? "slate"
         store.travel = mode
         store.travelMinutes = Int16(journey?.minutes ?? 10)
         store.distanceKm = journey?.kilometres ?? 0
@@ -400,8 +400,8 @@ struct PriceExample: View {
                 }
                 .foregroundStyle(Color.ink)
             }
-            example(shop: "Aldi", colorName: "blue", price: 145, journey: String(localized: "20 min drive"), isCheapest: true)
-            example(shop: "Corner shop", colorName: "orange", price: 189, journey: String(localized: "4 min walk"), isCheapest: false)
+            example(shop: "Aldi", colorName: "slate", price: 145, journey: String(localized: "20 min drive"), isCheapest: true)
+            example(shop: "Corner shop", colorName: "apricot", price: 189, journey: String(localized: "4 min walk"), isCheapest: false)
         }
         .card(padding: 18)
         .accessibilityElement(children: .combine)

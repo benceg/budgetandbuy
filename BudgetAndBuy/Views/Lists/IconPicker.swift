@@ -55,8 +55,8 @@ struct IconPicker: View {
             }
             .font(.title2)
             .frame(width: 56, height: 56)
-            .foregroundStyle(isSelected ? Color.white : Color.primary)
-            .background(isSelected ? Color.accentColor : Color(.secondarySystemBackground), in: .rect(cornerRadius: 12))
+            .foregroundStyle(isSelected ? Color.onBrand : Color.ink)
+            .background(isSelected ? Color.brand : Color.sunken, in: .rect(cornerRadius: 12))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(icon.map { Text($0.rawValue.replacing("-", with: " ")) } ?? Text("Aisle Icon"))

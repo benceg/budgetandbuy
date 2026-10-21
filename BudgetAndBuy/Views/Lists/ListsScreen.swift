@@ -208,7 +208,7 @@ private struct ListRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            ListIcon(symbolName: list.symbol, color: list.color, size: 40)
+            ListIcon(symbolName: list.symbol, color: list.color, foreground: list.foreground, size: 40)
             VStack(alignment: .leading, spacing: 2) {
                 Text(list.name ?? "")
                     .font(.headline)
