@@ -36,6 +36,11 @@ struct PlanPage: View {
             .padding()
         }
         .canvasBackground()
+        #if DEBUG
+        .onAppear {
+            if let debugGoal = DebugLaunch.goal { goal = debugGoal }
+        }
+        #endif
         .sheet(isPresented: $isAddingShop) {
             if let household = list.household {
                 NavigationStack {
@@ -248,7 +253,31 @@ private struct StopCard: View {
 
 private struct RouteMap: View {
     let stops: [ShoppingPlan.Stop]
-    @State private var position: MapCameraPosition = .automatic
+    @State private var position: MapCameraPosition
+
+    init(stops: [ShoppingPlan.Stop]) {
+        self.stops = stops
+        _position = State(initialValue: Self.framing(stops))
+    }
+
+    /// The plan's shops with room around them. Never closer than about
+    /// 1.5 km across, so a single shop shows its neighbourhood.
+    static func framing(_ stops: [ShoppingPlan.Stop]) -> MapCameraPosition {
+        let coordinates = stops.compactMap(\.store.coordinate)
+        guard let first = coordinates.first else { return .automatic }
+        let latitudes = coordinates.map(\.latitude), longitudes = coordinates.map(\.longitude)
+        let center = CLLocationCoordinate2D(
+            latitude: (latitudes.min()! + latitudes.max()!) / 2,
+            longitude: (longitudes.min()! + longitudes.max()!) / 2
+        )
+        let minimumDegrees = 0.014
+        let longitudeScale = max(0.2, cos(first.latitude * .pi / 180))
+        let span = MKCoordinateSpan(
+            latitudeDelta: max(minimumDegrees, (latitudes.max()! - latitudes.min()!) * 1.6),
+            longitudeDelta: max(minimumDegrees / longitudeScale, (longitudes.max()! - longitudes.min()!) * 1.6)
+        )
+        return .region(MKCoordinateRegion(center: center, span: span))
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -265,7 +294,7 @@ private struct RouteMap: View {
             // A different plan has different shops: frame them, even if
             // you'd moved the map.
             .onChange(of: stops.map(\.id)) {
-                withAnimation { position = .automatic }
+                withAnimation { position = Self.framing(stops) }
             }
 
             Button {
