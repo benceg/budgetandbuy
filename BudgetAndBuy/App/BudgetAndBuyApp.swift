@@ -43,6 +43,7 @@ enum DebugLaunch {
     static let opensAddShop = arguments.contains("-addShop")
     static let tab = UserDefaults.standard.string(forKey: "tab").flatMap(AppTab.init(rawValue:))
     static let page = UserDefaults.standard.string(forKey: "page").flatMap(ListPage.init(rawValue:))
+    static let scrollAnchor = UserDefaults.standard.object(forKey: "scrollAnchor") as? Double ?? (UserDefaults.standard.string(forKey: "scrollAnchor")).flatMap(Double.init)
     static let goal = UserDefaults.standard.string(forKey: "goal").flatMap(ShoppingPlan.Goal.init(rawValue:))
 }
 #endif

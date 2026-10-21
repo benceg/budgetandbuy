@@ -95,8 +95,17 @@ struct ListScreen: View {
             }
         }
         .background(Color.canvas.ignoresSafeArea())
+        #if DEBUG
+        .background {
+            if let points = DebugLaunch.scrollAnchor { DebugScrollOffset(points: points) }
+        }
+        #endif
         .navigationTitle(list.name ?? "")
         .navigationSubtitle(subtitle)
+        // A large title collapses as you scroll, which changes the space under
+        // the pinned page tabs; on short pages that fed back into the scroll
+        // position and the screen jittered. A fixed title keeps it still.
+        .navigationBarTitleDisplayMode(.inline)
         .toolbarVisibility(.hidden, for: .tabBar)
         .toolbar { toolbar }
         .sheet(isPresented: $isEditingInfo) {

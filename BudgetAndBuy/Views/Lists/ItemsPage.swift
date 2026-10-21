@@ -93,6 +93,7 @@ struct ItemsPage: View {
             }
         }
         .themedList()
+        .contentMargins(.top, 4, for: .scrollContent)
         .sheet(item: $pricing) { target in
             PriceSheet(target: target)
         }
@@ -469,3 +470,4 @@ struct FlowLayout: Layout {
         return (origins, maxX, y + rowHeight)
     }
 }
+
