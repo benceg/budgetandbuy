@@ -90,7 +90,7 @@ struct ItemsPage: View {
                 Section(isExpanded: $isBasketExpanded) {
                     ForEach(inBasket, id: \.objectID, content: row)
                 } header: {
-                    AisleHeader(title: "In Basket", systemImage: "basket", count: inBasket.count, isCollapsed: !isBasketExpanded) {
+                    AisleHeader(title: "In Basket", icon: Image(systemName: "basket"), count: inBasket.count, isCollapsed: !isBasketExpanded) {
                         withAnimation { isBasketExpanded.toggle() }
                     }
                 }
@@ -271,22 +271,22 @@ struct ItemsPage: View {
 
 private struct AisleHeader: View {
     let title: LocalizedStringResource
-    let systemImage: String
+    let icon: Image
     let count: Int
     let isCollapsed: Bool
     let action: () -> Void
 
     init(category: ProductCategory, count: Int, isCollapsed: Bool, action: @escaping () -> Void) {
         title = category.title
-        systemImage = category.symbolName
+        icon = Image(category.icon.imageName)
         self.count = count
         self.isCollapsed = isCollapsed
         self.action = action
     }
 
-    init(title: LocalizedStringResource, systemImage: String, count: Int, isCollapsed: Bool, action: @escaping () -> Void) {
+    init(title: LocalizedStringResource, icon: Image, count: Int, isCollapsed: Bool, action: @escaping () -> Void) {
         self.title = title
-        self.systemImage = systemImage
+        self.icon = icon
         self.count = count
         self.isCollapsed = isCollapsed
         self.action = action
@@ -295,7 +295,7 @@ private struct AisleHeader: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                Image(systemName: systemImage)
+                icon
                     .foregroundStyle(Color.brandInk)
                 Text(title)
                     .foregroundStyle(Color.ink)
@@ -454,7 +454,7 @@ private struct SuggestionRow: View {
                     if let icon = entry.icon {
                         Image(icon.imageName)
                     } else {
-                        Image(systemName: entry.category.symbolName)
+                        Image(entry.category.icon.imageName)
                     }
                 }
             }

@@ -64,7 +64,8 @@ struct ListScreen: View {
         stores.first { $0.uuid?.uuidString == shoppingStoreID }
     }
 
-    private var toBuy: [Item] { Array(toBuyResults) }
+    /// Alphabetical, like the aisles they're grouped into.
+    private var toBuy: [Item] { toBuyResults.sorted(by: Item.alphabetically) }
     private var inBasket: [Item] { Array(basketResults) }
     private var items: [Item] { toBuy + inBasket }
 

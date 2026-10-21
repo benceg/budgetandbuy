@@ -1,7 +1,8 @@
 """Builds the grocery icons as custom SF Symbols.
 
-Downloads the free icon sets named in icons.json, evens out their stroke
-weights, converts each icon to an SF Symbol template with SwiftDraw
+Downloads the free icon sets named in icons.json (and reads our own
+drawings, "custom:name", from custom/name.svg on a 24-point grid), evens out
+their stroke weights, converts each icon to an SF Symbol template with SwiftDraw
 (`brew install swiftdraw`) and writes them to the asset catalogue, along with
 the sets' licences.
 
@@ -31,6 +32,8 @@ def load_set(name, version):
 
 
 def svg(icon_set, set_name, icon_name):
+    if set_name == "custom":
+        return 24, (HERE / "custom" / f"{icon_name}.svg").read_text()
     icon = icon_set["icons"][icon_name]
     width = icon.get("width", icon_set.get("width", 16))
     height = icon.get("height", icon_set.get("height", 16))
@@ -46,6 +49,7 @@ def main():
         sys.exit("SwiftDraw isn't installed. Run: brew install swiftdraw")
     config = json.load(open(HERE / "icons.json"))
     sets = {name: load_set(name, version) for name, version in config["iconifyPackages"].items()}
+    sets["custom"] = None
 
     shutil.rmtree(ASSETS, ignore_errors=True)
     ASSETS.mkdir(parents=True)
@@ -72,7 +76,7 @@ def main():
                 "symbols": [{"filename": f"{name}.svg", "idiom": "universal"}],
             }, indent=2) + "\n")
 
-    used = sorted({source.split(":")[0] for source in config["icons"].values()}, key=lambda s: s != "hugeicons")
+    used = sorted({source.split(":")[0] for source in config["icons"].values()} - {"custom"}, key=lambda s: s != "hugeicons")
     LICENCES.parent.mkdir(parents=True, exist_ok=True)
     sections = [f"{TITLES[s]}\n\n{(HERE / 'licenses' / f'{s}.txt').read_text().strip()}" for s in used]
     LICENCES.write_text("Product icons are adapted from these free icon sets.\n\n" + "\n\n\n".join(sections) + "\n")

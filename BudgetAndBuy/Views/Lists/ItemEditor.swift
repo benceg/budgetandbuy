@@ -74,7 +74,7 @@ struct ItemEditor: View {
                             Label {
                                 Text(category.title)
                             } icon: {
-                                Image(systemName: category.symbolName)
+                                Image(category.icon.imageName)
                             }
                             .tag(Optional(category))
                         }

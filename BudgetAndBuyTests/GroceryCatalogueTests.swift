@@ -29,6 +29,7 @@ struct GroceryCatalogueTests {
         ("Free-range chicken thighs", "drumstick"),
         ("Dishwasher tablets", "detergent"),
         ("Cheese and onion crisps", nil),
+        ("New potatoes", "potato"),
         ("Orange squash", "juice"),
     ] as [(String, String?)])
     func recognisesItemsInLongerNames(_ name: String, _ icon: String?) throws {
@@ -61,9 +62,9 @@ struct GroceryCatalogueTests {
         #expect(milk.icon?.rawValue == "milk")
 
         // Known, but without an icon: it isn't looked at again.
-        let potatoes = try #require(list.addItem(named: "Potatoes")?.product)
-        #expect(potatoes.category == .fruitAndVeg)
-        #expect(potatoes.iconID == "")
+        let butter = try #require(list.addItem(named: "Butter")?.product)
+        #expect(butter.category == .dairyAndEggs)
+        #expect(butter.iconID == "")
 
         let unknown = try #require(list.addItem(named: "Celeriac")?.product)
         #expect(unknown.category == nil)

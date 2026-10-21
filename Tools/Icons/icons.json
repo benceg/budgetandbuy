@@ -238,6 +238,9 @@
     "handbag": "hugeicons:hand-bag-01",
     "backpack": "hugeicons:backpack-01",
     "umbrella": "hugeicons:umbrella",
-    "hanger": "hugeicons:hanger"
+    "hanger": "hugeicons:hanger",
+    "potato": "custom:potato",
+    "produce": "hugeicons:natural-food",
+    "bag": "hugeicons:shopping-bag-01"
   }
 }

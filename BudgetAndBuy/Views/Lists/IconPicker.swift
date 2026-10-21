@@ -50,7 +50,7 @@ struct IconPicker: View {
                 if let icon {
                     Image(icon.imageName)
                 } else {
-                    Image(systemName: (category ?? .other).symbolName)
+                    Image((category ?? .other).icon.imageName)
                 }
             }
             .font(.title2)

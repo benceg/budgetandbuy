@@ -9,7 +9,7 @@ struct ProductIcon: View {
             if let icon = product?.icon {
                 Image(icon.imageName)
             } else {
-                Image(systemName: (product?.category ?? .other).symbolName)
+                Image((product?.category ?? .other).icon.imageName)
             }
         }
         .accessibilityHidden(true)

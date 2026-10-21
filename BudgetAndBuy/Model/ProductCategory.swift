@@ -47,26 +47,27 @@ enum ProductCategory: String, CaseIterable, Identifiable {
         }
     }
 
-    /// SF Symbols name, in its outline (line) form.
-    var symbolName: String {
+    /// The aisle's icon, from the same set as product icons. Products with no
+    /// icon of their own show it, so it's kept general: leaves, not a carrot.
+    var icon: GroceryIcon {
         switch self {
-        case .fruitAndVeg: "carrot"
-        case .meatAndFish: "fish"
-        case .dairyAndEggs: "refrigerator"
-        case .bakery: "birthday.cake"
-        case .frozen: "snowflake"
-        case .foodCupboard: "cabinet"
-        case .snacks: "popcorn"
-        case .drinks: "waterbottle"
-        case .baby: "stroller"
-        case .healthAndBeauty: "cross.case"
-        case .household: "bubbles.and.sparkles"
-        case .pets: "pawprint"
-        case .homeAndGarden: "house"
-        case .toysAndGames: "teddybear"
-        case .electronics: "tv"
+        case .fruitAndVeg: "produce"
+        case .meatAndFish: "meat"
+        case .dairyAndEggs: "milk-carton"
+        case .bakery: "bread"
+        case .frozen: "frozen"
+        case .foodCupboard: "tin"
+        case .snacks: "sweets"
+        case .drinks: "water"
+        case .baby: "baby-bottle"
+        case .healthAndBeauty: "tablets"
+        case .household: "spray"
+        case .pets: "paw"
+        case .homeAndGarden: "plant"
+        case .toysAndGames: "bricks"
+        case .electronics: "charger"
         case .clothing: "tshirt"
-        case .other: "basket"
+        case .other: "bag"
         }
     }
 }
@@ -79,9 +80,10 @@ extension Product {
 }
 
 extension ProductCategory {
-    /// Groups items by aisle, in aisle order. Uncategorised items join Other.
+    /// Groups items by aisle, in aisle order, alphabetically within each.
+    /// Uncategorised items join Other.
     static func aisles(of items: [Item]) -> [(category: ProductCategory, items: [Item])] {
-        let grouped = Dictionary(grouping: items) { $0.product?.category ?? .other }
+        let grouped = Dictionary(grouping: items.sorted(by: Item.alphabetically)) { $0.product?.category ?? .other }
         return allCases.compactMap { category in
             grouped[category].map { (category, $0) }
         }

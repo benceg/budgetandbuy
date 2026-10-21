@@ -61,6 +61,17 @@ struct ShoppingListTests {
         #expect(ProductCategory.aisles(of: [milk]).map(\.category) == [.dairyAndEggs])
     }
 
+    @Test func aislesListItemsAlphabetically() throws {
+        let list = household.addList()
+        for name in ["yoghurt", "Milk 2L", "Butter", "milk 1 pint", "Éclairs", "Apples"] {
+            list.addItem(named: name)
+        }
+        let aisles = ProductCategory.aisles(of: Array(list.items ?? []))
+        let dairy = try #require(aisles.first { $0.category == .dairyAndEggs })
+        #expect(dairy.items.map(\.displayName) == ["Butter", "milk 1 pt", "Milk 2 L", "yoghurt"])
+        #expect(aisles.first?.items.map(\.displayName) == ["Apples"])
+    }
+
     @Test func listsInAHouseholdShareProducts() throws {
         let weekly = household.addList()
         let party = household.addList()
@@ -264,7 +275,7 @@ struct ShoppingListTests {
 
     @Test(arguments: ProductCategory.allCases)
     func categoryIconsExist(_ category: ProductCategory) {
-        #expect(UIImage(systemName: category.symbolName) != nil, "\(category.symbolName) isn't an SF Symbol")
+        #expect(UIImage(named: category.icon.imageName) != nil, "\(category.icon.imageName) isn't in the asset catalogue")
     }
 
     @Test(arguments: ListAppearance.symbolNames)

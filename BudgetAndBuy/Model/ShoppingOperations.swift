@@ -98,6 +98,13 @@ extension ShoppingList {
 extension Item {
     var displayName: String { product?.title ?? "" }
 
+    /// By name, ignoring case and accents; smaller sizes first for the same name.
+    static func alphabetically(_ lhs: Item, _ rhs: Item) -> Bool {
+        let order = (lhs.product?.name ?? "").localizedStandardCompare(rhs.product?.name ?? "")
+        if order != .orderedSame { return order == .orderedAscending }
+        return (lhs.product?.sizeAmount ?? 0) < (rhs.product?.sizeAmount ?? 0)
+    }
+
     func setChecked(_ checked: Bool) {
         isChecked = checked
         checkedAt = checked ? .now : nil

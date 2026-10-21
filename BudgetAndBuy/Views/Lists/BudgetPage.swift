@@ -94,7 +94,7 @@ private struct AisleBreakdown: View {
         VStack(spacing: 16) {
             ForEach(aisles) { aisle in
                 HStack(spacing: 12) {
-                    Image(systemName: aisle.category.symbolName)
+                    Image(aisle.category.icon.imageName)
                         .font(.subheadline)
                         .foregroundStyle(Color.brandInk)
                         .frame(width: 36, height: 36)
