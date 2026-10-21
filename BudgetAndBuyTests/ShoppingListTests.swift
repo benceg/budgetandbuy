@@ -95,6 +95,7 @@ struct ShoppingListTests {
         try context.save()
 
         let duplicate = Household.create(in: context)
+        duplicate.isStarter = true
         duplicate.createdAt = try #require(original.createdAt).addingTimeInterval(60)
         let list = duplicate.addList()
         let toast = try #require(list.addItem(named: "bread"))

@@ -79,12 +79,57 @@ extension Household {
     }
 }
 
+extension Household {
+    /// Copies another household's shops into this one, and optionally every
+    /// price and "not sold here" seen at them, with the products they're for.
+    /// Lists and trips stay where they are.
+    func copyShops(from source: Household, includingPrices: Bool) {
+        var products: [NSManagedObjectID: Product] = [:]
+        for store in (source.stores ?? []).sorted(by: Store.isOlder) {
+            let copy = addStore()
+            copy.name = store.name
+            copy.colorName = store.colorName
+            copy.travelMode = store.travelMode
+            copy.travelMinutes = store.travelMinutes
+            copy.distanceKm = store.distanceKm
+            copy.hasLocation = store.hasLocation
+            copy.latitude = store.latitude
+            copy.longitude = store.longitude
+            guard includingPrices else { continue }
+            for price in (store.prices ?? []).sorted(by: Price.isOlder) {
+                guard let original = price.product else { continue }
+                let product = products[original.objectID] ?? {
+                    let product = self.product(named: original.name ?? "", size: original.size)
+                    if product.categoryID == nil { product.categoryID = original.categoryID }
+                    if product.iconID == nil { product.iconID = original.iconID }
+                    products[original.objectID] = product
+                    return product
+                }()
+                let priceCopy = copy.insertRelated(Price.self)
+                priceCopy.amountMinor = price.amountMinor
+                priceCopy.isUnavailable = price.isUnavailable
+                priceCopy.createdAt = price.createdAt
+                priceCopy.product = product
+                priceCopy.store = copy
+            }
+        }
+    }
+}
+
 enum HouseholdSelection {
-    /// The household to show: the one last chosen if it still exists,
-    /// otherwise one you've joined, otherwise your own.
+    /// The current household: the one last used if it still exists,
+    /// otherwise your own, otherwise one you've joined.
     static func preferred(from households: [Household], selectedID: String) -> Household? {
         households.first { $0.uuid?.uuidString == selectedID }
-            ?? households.first(where: \.isSharedWithMe)
+            ?? households.first(where: { !$0.isSharedWithMe })
             ?? households.first
+    }
+
+    /// Households in the order Home shows them: alphabetically.
+    static func sorted(_ households: some Sequence<Household>) -> [Household] {
+        households.sorted { lhs, rhs in
+            let order = (lhs.name ?? "").localizedStandardCompare(rhs.name ?? "")
+            return order == .orderedSame ? Household.isOlder(lhs, than: rhs) : order == .orderedAscending
+        }
     }
 }

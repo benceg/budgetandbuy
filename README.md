@@ -20,12 +20,13 @@ Open `BudgetAndBuy.xcodeproj` in Xcode 27 or later. The first time you run on a 
 
 ## The app
 
-- **Lists** tab: each list has three pages. **Items** has the add field, aisles and basket. **Where to Shop** shows the cheapest, one-stop and closest plans (`Planning.swift`). **Budget** shows the estimated cost by aisle and the month's spending. The bottom button starts and finishes a shop.
-- **Shops** tab: shops are added from Maps (nearby, or by name), with the journey estimated by Maps (`ShopFinder.swift`).
-- **Savings** tab: money saved and carbon avoided, from finished trips.
-- **Household** tab: members and invitations, the monthly budget, settings and help.
-- First launch runs a four-step introduction (`OnboardingView.swift`) that adds shops and a first list.
-- Colours and shared components live in `Shared/Palette.swift` and `Theme/Components.swift`. There are five themes (sage by default), each with a matching app icon; both are chosen in Household → Appearance. The icons' sources are in `Tools/AppIcon`.
+- **Households:** a household holds its lists, products, shops, prices and trips, and is shared as a whole through one iCloud invitation. You can have several, such as your own and one for someone you care for; each is shared only with the people invited to it. Each device makes a starter household (“Home”) on first launch, and only starter households are ever merged across devices (`Deduplication.swift`).
+- **Home** tab: every household, alphabetically, each with its lists, alphabetically. Opening a list makes its household the current one and the app reopens into that list. Each household has its own settings screen: name, colour, members, monthly budget, delete or leave. New Household can copy shops, and optionally their prices, from another household.
+- **A list** has three pages. **Items** has the add field, aisles (as a list or as tiles) and basket. **Where to Shop** shows the cheapest, one-stop and closest plans (`Planning.swift`). **Budget** shows the estimated cost by aisle and the month's spending. The bottom button starts and finishes a shop.
+- **Shops** and **Savings** tabs show the current household, with a title menu to switch. Shops are added from Maps (nearby, or by name), with the journey estimated by Maps (`ShopFinder.swift`). A product can be marked as not sold at a shop.
+- **Settings** tab: appearance (theme and app icon), list layout, aisles, shopping on arrival, help.
+- First launch runs a four-step introduction (`OnboardingView.swift`) that adds shops, names the household and makes a first list.
+- Colours and shared components live in `Shared/Palette.swift` and `Theme/Components.swift`. There are five themes (sage by default), each with a matching app icon. The icons' sources are in `Tools/AppIcon`.
 
 ## Product icons
 

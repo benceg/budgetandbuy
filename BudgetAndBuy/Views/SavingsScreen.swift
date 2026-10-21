@@ -13,12 +13,16 @@ enum CarbonFormat {
 /// shops behind it.
 struct SavingsScreen: View {
     @ObservedObject var household: Household
+    let households: [Household]
+    @Binding var selectedHouseholdID: String
     @Environment(\.managedObjectContext) private var context
     @FetchRequest private var trips: FetchedResults<Trip>
     @State private var period: TripStats.Period = .month
 
-    init(household: Household) {
+    init(household: Household, households: [Household], selectedHouseholdID: Binding<String>) {
         self.household = household
+        self.households = households
+        _selectedHouseholdID = selectedHouseholdID
         _trips = FetchRequest(
             sortDescriptors: [NSSortDescriptor(key: "createdAt", ascending: false)],
             predicate: NSPredicate(format: "household == %@", household),
@@ -54,6 +58,7 @@ struct SavingsScreen: View {
             }
             .canvasBackground()
             .navigationTitle("Savings")
+            .householdSwitcher(household, households: households, selection: $selectedHouseholdID)
         }
     }
 

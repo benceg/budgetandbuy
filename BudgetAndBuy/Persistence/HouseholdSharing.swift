@@ -74,6 +74,28 @@ extension PersistenceController {
     }
 }
 
+extension PersistenceController {
+    /// Deletes a household you own, for everyone it's shared with, or leaves
+    /// one shared with you, keeping it for the others.
+    func remove(_ household: Household) {
+        guard let share = existingShare(for: household) else {
+            viewContext.delete(household)
+            viewContext.saveIfNeeded()
+            return
+        }
+        if household.isSharedWithMe {
+            removeLocalCopy(of: share)
+        } else if let privateStore {
+            // Purging the share's zone deletes the household and the share in iCloud.
+            container.purgeObjectsAndRecordsInZone(with: share.recordID.zoneID, in: privateStore) { _, error in
+                if let error {
+                    logger.error("Deleting shared household failed: \(error)")
+                }
+            }
+        }
+    }
+}
+
 extension Household {
     /// True for a household someone else owns and has shared with you.
     var isSharedWithMe: Bool {

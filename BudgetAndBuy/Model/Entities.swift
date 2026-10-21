@@ -8,6 +8,10 @@ final class Household: NSManagedObject, Timestamped {
     @NSManaged var uuid: UUID?
     @NSManaged var createdAt: Date?
     @NSManaged var name: String?
+    @NSManaged var colorName: String?
+    /// Made automatically the first time the app runs on a device. Two devices
+    /// can each make one before iCloud syncs; only these are ever merged.
+    @NSManaged var isStarter: Bool
     /// Zero when no monthly budget is set.
     @NSManaged var monthlyBudgetMinor: Int64
     @NSManaged var lists: Set<ShoppingList>?

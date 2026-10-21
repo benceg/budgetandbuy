@@ -101,6 +101,10 @@ final class StoreArrivalMonitor {
         guard let store = try? PersistenceController.shared.viewContext.fetch(request).first else { return }
 
         UserDefaults.standard.set(id, forKey: "shoppingStoreID")
+        // Shops can belong to any of your households; follow it to that one.
+        if let household = store.household?.uuid?.uuidString {
+            UserDefaults.standard.set(household, forKey: "selectedHouseholdID")
+        }
 
         let content = UNMutableNotificationContent()
         content.title = String(localized: "You’re at \(store.name ?? "")")

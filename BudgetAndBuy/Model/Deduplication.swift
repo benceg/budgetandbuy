@@ -1,26 +1,46 @@
 import CoreData
 
 extension NSManagedObjectContext {
-    /// Every device creates a household on first launch, before iCloud has had a
-    /// chance to deliver the one made elsewhere. Once they meet, keep the oldest
-    /// and fold the others into it. Each device reaches the same answer.
+    /// Every device creates a starter household on first launch, before iCloud
+    /// has had a chance to deliver the one made elsewhere. Once they meet, keep
+    /// the oldest starter and fold the others into it; each device reaches the
+    /// same answer. Households people create themselves are never merged.
+    ///
+    /// A starter that's still empty once other households exist is dropped:
+    /// it was made before your existing households arrived on this device.
     func mergeDuplicateHouseholds(in store: NSPersistentStore? = nil) throws {
         let request = NSFetchRequest<Household>(entityName: "Household")
         request.sortDescriptors = Household.oldestFirst
         if let store { request.affectedStores = [store] }
 
         let households = try fetch(request)
-        guard let keeper = households.first else { return }
+        let starters = households.filter(\.isStarter)
+        if let keeper = starters.first {
+            for duplicate in starters.dropFirst() {
+                for list in duplicate.lists ?? [] { list.household = keeper }
+                for product in duplicate.products ?? [] { product.household = keeper }
+                for store in duplicate.stores ?? [] { store.household = keeper }
+                for trip in duplicate.trips ?? [] { trip.household = keeper }
+                processPendingChanges()
+                delete(duplicate)
+            }
+            keeper.mergeDuplicateProducts()
 
-        for duplicate in households.dropFirst() {
-            for list in duplicate.lists ?? [] { list.household = keeper }
-            for product in duplicate.products ?? [] { product.household = keeper }
-            for store in duplicate.stores ?? [] { store.household = keeper }
-            for trip in duplicate.trips ?? [] { trip.household = keeper }
-            processPendingChanges()
-            delete(duplicate)
+            let others = households.filter { !$0.isStarter }
+            if !others.isEmpty, keeper.isEmpty {
+                delete(keeper)
+            }
         }
-        keeper.mergeDuplicateProducts()
+        for household in households where !household.isStarter {
+            household.mergeDuplicateProducts()
+        }
+    }
+}
+
+extension Household {
+    /// Nothing in it yet: no lists, products, shops or trips.
+    var isEmpty: Bool {
+        (lists ?? []).isEmpty && (products ?? []).isEmpty && (stores ?? []).isEmpty && (trips ?? []).isEmpty
     }
 }
 

@@ -501,6 +501,7 @@ private struct FirstListStep: View {
     let finish: () -> Void
 
     @Environment(\.managedObjectContext) private var context
+    @State private var householdName: String
     @State private var name = String(localized: "Weekly Shop")
     @State private var picked: Set<String> = []
 
@@ -508,17 +509,41 @@ private struct FirstListStep: View {
 
     private var hasLists: Bool { !(household.lists?.isEmpty ?? true) }
 
+    init(household: Household, finish: @escaping () -> Void) {
+        self.household = household
+        self.finish = finish
+        _householdName = State(initialValue: household.name ?? String(localized: "Home"))
+    }
+
     var body: some View {
         StepLayout {
             if hasLists {
                 StepTitle(title: "You’re all set", message: "Your lists are waiting. Tap Start Shopping when you get to a shop.")
             } else {
-                StepTitle(title: "Start your first list", message: "Give it a name, and pick a few things to get going.")
-                TextField("List name", text: $name)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Color.ink)
-                    .padding(16)
-                    .background(Color.surface, in: .rect(cornerRadius: 16))
+                StepTitle(title: "Start your first list", message: "Name your household and your list, and pick a few things to get going.")
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Household")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.inkSecondary)
+                    TextField("Household name", text: $householdName)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Color.ink)
+                        .padding(16)
+                        .background(Color.surface, in: .rect(cornerRadius: 16))
+                    Text("Everyone you share it with sees its lists. You can add other households later, such as one for someone you care for.")
+                        .font(.footnote)
+                        .foregroundStyle(Color.inkSecondary)
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("First list")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.inkSecondary)
+                    TextField("List name", text: $name)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Color.ink)
+                        .padding(16)
+                        .background(Color.surface, in: .rect(cornerRadius: 16))
+                }
                 FlowLayout(spacing: 8) {
                     ForEach(Self.starters, id: \.self) { starter in
                         let isPicked = picked.contains(starter)
@@ -551,6 +576,10 @@ private struct FirstListStep: View {
     }
 
     private func create() {
+        let trimmedHousehold = ProductName.display(householdName)
+        if !hasLists, !household.isSharedWithMe {
+            household.name = trimmedHousehold.isEmpty ? String(localized: "Home") : trimmedHousehold
+        }
         if !hasLists {
             let list = household.addList()
             list.name = ProductName.display(name)

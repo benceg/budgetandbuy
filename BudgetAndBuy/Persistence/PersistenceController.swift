@@ -68,9 +68,18 @@ final class PersistenceController {
         if let household = try? viewContext.fetch(request).first {
             return household
         }
-        let household = Household.create(in: viewContext)
-        if let privateStore { viewContext.assign(household, to: privateStore) }
+        let household = createHousehold(named: String(localized: "Home"))
+        household.isStarter = true
         viewContext.saveIfNeeded()
+        return household
+    }
+
+    /// A new household of your own, kept in your private iCloud database.
+    func createHousehold(named name: String, colorName: String = "sage") -> Household {
+        let household = Household.create(in: viewContext)
+        household.name = name
+        household.colorName = colorName
+        if let privateStore { viewContext.assign(household, to: privateStore) }
         return household
     }
 
@@ -204,6 +213,15 @@ extension PersistenceController {
             trip.carbonKg = carbon
             trip.carbonSavedKg = carbonSaved
         }
+        let granny = controller.createHousehold(named: "Granny’s House", colorName: "orchid")
+        granny.copyShops(from: household, includingPrices: true)
+        let grannyList = granny.addList()
+        grannyList.name = "Granny’s Weekly"
+        grannyList.colorName = "rose"
+        for name in ["Milk", "Bread", "Tea bags", "Digestives", "Bananas"] {
+            grannyList.addItem(named: name)
+        }
+
         #if DEBUG
         if DebugLaunch.usesSampleData {
             UserDefaults.standard.set(DebugLaunch.isShopping ? coop.uuid?.uuidString : "", forKey: "shoppingStoreID")

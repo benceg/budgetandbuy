@@ -4,14 +4,18 @@ import SwiftUI
 /// The shops the household uses, each with the prices it has collected.
 struct ShopsScreen: View {
     @ObservedObject var household: Household
+    let households: [Household]
+    @Binding var selectedHouseholdID: String
     @Environment(\.managedObjectContext) private var context
     @FetchRequest private var stores: FetchedResults<Store>
     @AppStorage(StoreArrivalMonitor.enabledKey) private var noticesArrivals = false
     @State private var isAdding = false
     @State private var path = NavigationPath()
 
-    init(household: Household) {
+    init(household: Household, households: [Household], selectedHouseholdID: Binding<String>) {
         self.household = household
+        self.households = households
+        _selectedHouseholdID = selectedHouseholdID
         _stores = FetchRequest(
             sortDescriptors: [NSSortDescriptor(key: "name", ascending: true, selector: #selector(NSString.localizedStandardCompare(_:)))],
             predicate: NSPredicate(format: "household == %@", household),
@@ -43,6 +47,7 @@ struct ShopsScreen: View {
                 }
             }
             .navigationTitle("Shops")
+            .householdSwitcher(household, households: households, selection: $selectedHouseholdID)
             .toolbar {
                 if !stores.isEmpty {
                     ToolbarItem(placement: .topBarTrailing) {
