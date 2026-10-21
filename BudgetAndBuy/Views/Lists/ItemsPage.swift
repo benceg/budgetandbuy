@@ -12,6 +12,9 @@ struct ItemsPage: View {
 
     @Environment(\.managedObjectContext) private var context
     @AppStorage("groupsByAisle") private var groupsByAisle = true
+    @AppStorage(ItemLayout.storageKey) private var layout: ItemLayout = .list
+    /// The item whose details a long-pressed tile opens.
+    @State private var detailItem: Item?
     @State private var newItemName = ""
     @FocusState private var isAdding: Bool
     @State private var collapsedAisles: Set<ProductCategory> = []
@@ -39,18 +42,51 @@ struct ItemsPage: View {
     }
 
     var body: some View {
+        Group {
+            switch layout {
+            case .list: listView
+            case .tiles: tilesView
+            }
+        }
+        .scrollDismissesKeyboard(.immediately)
+        #if DEBUG
+        .task {
+            if let typed = DebugLaunch.typedItem {
+                newItemName = typed
+                isAdding = true
+            }
+            guard DebugLaunch.ticksFirstItem else { return }
+            try? await Task.sleep(for: .seconds(1))
+            if let first = toBuy.first { toggle(first) }
+        }
+        #endif
+        .sheet(item: $pricing) { target in
+            PriceSheet(target: target)
+        }
+        .navigationDestination(item: $detailItem) { item in
+            ItemDetailView(item: item)
+        }
+    }
+
+    private var suggestionRows: some View {
+        ForEach(suggestions) { suggestion in
+            if case .added = suggestion {
+                SuggestionRow(suggestion: suggestion)
+            } else {
+                Button { add(suggestion) } label: {
+                    SuggestionRow(suggestion: suggestion)
+                }
+            }
+        }
+    }
+
+    // MARK: List
+
+    private var listView: some View {
         List {
             Section {
                 addField
-                ForEach(suggestions) { suggestion in
-                    if case .added = suggestion {
-                        SuggestionRow(suggestion: suggestion)
-                    } else {
-                        Button { add(suggestion) } label: {
-                            SuggestionRow(suggestion: suggestion)
-                        }
-                    }
-                }
+                suggestionRows
             }
             .onSurface()
 
@@ -110,20 +146,105 @@ struct ItemsPage: View {
         }
         .themedList()
         .contentMargins(.top, 4, for: .scrollContent)
-        .scrollDismissesKeyboard(.immediately)
-        #if DEBUG
-        .task {
-            if let typed = DebugLaunch.typedItem {
-                newItemName = typed
-                isAdding = true
+    }
+
+    // MARK: Tiles
+
+    /// The smallest a tile can be; larger text makes tiles bigger, so fewer fit.
+    @ScaledMetric(relativeTo: .body) private var minimumTileWidth: CGFloat = 88
+    private let tileSpacing: CGFloat = 10
+
+    private var tilesView: some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width - 32
+            let fitting = Int((width + tileSpacing) / (minimumTileWidth + tileSpacing))
+            let columns = Array(repeating: GridItem(.flexible(), spacing: tileSpacing), count: min(4, max(2, fitting)))
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    VStack(spacing: 0) {
+                        addField
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 6)
+                        ForEach(suggestions) { suggestion in
+                            Divider().overlay(Color.hairline).padding(.leading, 56)
+                            Group {
+                                if case .added = suggestion {
+                                    SuggestionRow(suggestion: suggestion)
+                                } else {
+                                    Button { add(suggestion) } label: {
+                                        SuggestionRow(suggestion: suggestion).contentShape(.rect)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 11)
+                        }
+                    }
+                    .background(Color.surface, in: .rect(cornerRadius: 22, style: .continuous))
+
+                    if items.isEmpty && newItemName.isEmpty {
+                        starterItems
+                    }
+
+                    if groupsByAisle {
+                        ForEach(aisles, id: \.category) { aisle in
+                            let isCollapsed = collapsedAisles.contains(aisle.category)
+                            tileSection(items: isCollapsed ? [] : aisle.items, columns: columns) {
+                                AisleHeader(category: aisle.category, count: aisle.items.count, isCollapsed: isCollapsed) {
+                                    withAnimation {
+                                        if isCollapsed { collapsedAisles.remove(aisle.category) } else { collapsedAisles.insert(aisle.category) }
+                                    }
+                                }
+                            }
+                        }
+                    } else if !toBuy.isEmpty {
+                        tileSection(items: toBuy, columns: columns) {
+                            SectionHeading(title: "To Buy")
+                        }
+                    }
+
+                    if !items.isEmpty && toBuy.isEmpty {
+                        Label("Everything’s in the basket", systemImage: "checkmark.circle")
+                            .foregroundStyle(Color.brandInk)
+                            .card()
+                    }
+
+                    if !inBasket.isEmpty {
+                        tileSection(items: isBasketExpanded ? inBasket : [], columns: columns) {
+                            AisleHeader(title: "In Basket", icon: Image(systemName: "basket"), count: inBasket.count, isCollapsed: !isBasketExpanded) {
+                                withAnimation { isBasketExpanded.toggle() }
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 4)
+                .padding(.bottom, 24)
             }
-            guard DebugLaunch.ticksFirstItem else { return }
-            try? await Task.sleep(for: .seconds(1))
-            if let first = toBuy.first { toggle(first) }
+            .canvasBackground()
         }
-        #endif
-        .sheet(item: $pricing) { target in
-            PriceSheet(target: target)
+    }
+
+    private func tileSection<Header: View>(items: [Item], columns: [GridItem], @ViewBuilder header: () -> Header) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            header()
+                .padding(.horizontal, 4)
+                .closesKeyboard(when: isAdding) { isAdding = false }
+            LazyVGrid(columns: columns, spacing: tileSpacing) {
+                ForEach(items, id: \.objectID) { item in
+                    ItemTile(
+                        item: item,
+                        isTicking: ticking.contains(item.objectID),
+                        isLeaving: leaving.contains(item.objectID),
+                        reduceMotion: reduceMotion,
+                        onToggle: { toggle(item) },
+                        onOpen: { detailItem = item }
+                    )
+                    .closesKeyboard(when: isAdding) { isAdding = false }
+                    .transition(reduceMotion ? .opacity : .scale(scale: 0.7).combined(with: .opacity))
+                }
+            }
         }
     }
 
@@ -373,12 +494,19 @@ private struct ItemRow: View {
     let onToggle: () -> Void
     let onPrice: () -> Void
 
+    /// Counts taps on the tick, so the haptic follows taps rather than every
+    /// change in how the row looks.
+    @State private var tapCount = 0
+
     private var looksChecked: Bool { item.isChecked || isTicking }
 
     var body: some View {
         NavigationLink(value: item) {
             HStack(spacing: 12) {
-                Button(action: onToggle) {
+                Button {
+                    tapCount += 1
+                    onToggle()
+                } label: {
                     HStack(spacing: 12) {
                         Image(systemName: looksChecked ? "checkmark.circle.fill" : "circle")
                             .font(.title2)
@@ -394,7 +522,7 @@ private struct ItemRow: View {
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel(looksChecked ? "Take \(item.displayName) out of the basket" : "Put \(item.displayName) in the basket")
-                .sensoryFeedback(.selection, trigger: looksChecked)
+                .sensoryFeedback(.selection, trigger: tapCount)
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(item.product?.name ?? "")
@@ -469,6 +597,96 @@ private struct ItemRow: View {
         let context = item.managedObjectContext
         withAnimation { context?.delete(item) }
         context?.saveIfNeeded()
+    }
+}
+
+/// An item as a rounded square: a larger icon, with its name and how many
+/// beneath. Tap to put it in the basket (or take it out); long press for details.
+private struct ItemTile: View {
+    @ObservedObject var item: Item
+    let isTicking: Bool
+    let isLeaving: Bool
+    let reduceMotion: Bool
+    let onToggle: () -> Void
+    let onOpen: () -> Void
+
+    @State private var isPressing = false
+    /// Counts long presses, so the haptic plays when details open and not
+    /// when a finger merely lands on a tile, as it does at the start of a scroll.
+    @State private var openCount = 0
+    @State private var tapCount = 0
+
+    private var looksChecked: Bool { item.isChecked || isTicking }
+
+    private var detail: String? {
+        let parts = [item.product?.size?.formatted, item.quantity > 1 ? "×\(item.quantity)" : nil].compactMap(\.self)
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    var body: some View {
+        // A clear square sized by the column width keeps every tile square,
+        // however long its name.
+        Color.clear
+            .aspectRatio(1, contentMode: .fit)
+            .overlay { content }
+            .background(looksChecked ? Color.brandPale : Color.surface, in: .rect(cornerRadius: 20, style: .continuous))
+            .overlay(alignment: .topTrailing) {
+                if looksChecked {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title3)
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(Color.onBrand, Color.brand)
+                        .padding(6)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .contentShape(.rect(cornerRadius: 20, style: .continuous))
+            .scaleEffect(isLeaving && !reduceMotion ? 0.7 : isPressing ? 0.95 : 1)
+            .opacity(isLeaving ? 0 : 1)
+            .animation(.snappy(duration: 0.2), value: isPressing)
+            .animation(.snappy(duration: 0.2), value: looksChecked)
+            .onTapGesture {
+                tapCount += 1
+                onToggle()
+            }
+            .onLongPressGesture(minimumDuration: 0.45) {
+                openCount += 1
+                onOpen()
+            } onPressingChanged: { pressing in
+                isPressing = pressing
+            }
+            .sensoryFeedback(.selection, trigger: tapCount)
+            .sensoryFeedback(.impact(weight: .medium), trigger: openCount)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel([item.product?.name, detail].compactMap(\.self).joined(separator: ", "))
+            .accessibilityValue(looksChecked ? Text("In basket") : Text("To buy"))
+            .accessibilityAddTraits(.isButton)
+            .accessibilityHint(looksChecked ? Text("Takes it out of the basket") : Text("Puts it in the basket"))
+            .accessibilityAction(named: Text("Show Details"), onOpen)
+    }
+
+    private var content: some View {
+        VStack(spacing: 3) {
+            ProductIcon(product: item.product)
+                .font(.system(size: 25))
+                .foregroundStyle(looksChecked ? Color.inkSecondary : Color.ink)
+                .frame(height: 28)
+            Text(item.product?.name ?? "")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(looksChecked ? Color.inkSecondary : Color.ink)
+                .strikethrough(looksChecked, color: Color.inkSecondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+                .layoutPriority(1)
+            if let detail {
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(Color.inkSecondary)
+                    .lineLimit(1)
+            }
+        }
+        .padding(6)
     }
 }
 
@@ -588,3 +806,19 @@ struct FlowLayout: Layout {
     }
 }
 
+
+/// How a list's items are shown: rows, or a grid of tiles.
+enum ItemLayout: String, CaseIterable, Identifiable {
+    case list, tiles
+
+    static let storageKey = "itemLayout"
+
+    var id: Self { self }
+
+    var title: LocalizedStringResource {
+        switch self {
+        case .list: "List"
+        case .tiles: "Tiles"
+        }
+    }
+}

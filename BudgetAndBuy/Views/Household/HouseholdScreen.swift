@@ -14,6 +14,7 @@ struct HouseholdScreen: View {
     @Environment(\.persistence) private var persistence
     @AppStorage(StoreArrivalMonitor.enabledKey) private var noticesArrivals = false
     @AppStorage("groupsByAisle") private var groupsByAisle = true
+    @AppStorage(ItemLayout.storageKey) private var itemLayout: ItemLayout = .list
     @AppStorage(OnboardingView.completedKey) private var hasCompletedOnboarding = true
     @State private var name = ""
     @State private var share: CKShare?
@@ -116,6 +117,11 @@ struct HouseholdScreen: View {
                         get: { noticesArrivals },
                         set: { enabled in Task { await StoreArrivalMonitor.shared.setEnabled(enabled) } }
                     ))
+                    Picker("Show Items As", selection: $itemLayout) {
+                        ForEach(ItemLayout.allCases) { layout in
+                            Text(layout.title).tag(layout)
+                        }
+                    }
                     Toggle("Group Lists by Aisle", isOn: $groupsByAisle)
                 } header: {
                     SectionHeading(title: "Settings").textCase(nil)
