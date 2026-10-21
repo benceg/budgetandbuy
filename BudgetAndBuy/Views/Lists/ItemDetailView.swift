@@ -69,7 +69,7 @@ struct ItemDetailView: View {
                 .font(.system(size: 52))
                 .foregroundStyle(Color.ink)
                 .frame(width: 112, height: 112)
-                .background(Color.sagePale, in: .circle)
+                .background(Color.brandPale, in: .circle)
             Text(product?.name ?? "")
                 .font(.title.bold())
                 .foregroundStyle(Color.ink)
@@ -79,7 +79,7 @@ struct ItemDetailView: View {
                     Tag(text: size.formatted)
                 }
                 if let category = product?.category {
-                    Tag(text: String(localized: category.title), foreground: .forestInk, background: .sagePale)
+                    Tag(text: String(localized: category.title), foreground: .brandInk, background: .brandPale)
                 }
             }
         }
@@ -115,9 +115,9 @@ struct ItemDetailView: View {
         } label: {
             Image(systemName: symbol)
                 .font(.headline)
-                .foregroundStyle(Color.forestInk)
+                .foregroundStyle(Color.brandInk)
                 .frame(width: 44, height: 44)
-                .background(Color.sagePale, in: .circle)
+                .background(Color.brandPale, in: .circle)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(label))
@@ -174,7 +174,7 @@ private struct PriceRow: View {
                         .font(.body.weight(.medium))
                         .foregroundStyle(Color.ink)
                     if isCheapest {
-                        Tag(text: String(localized: "Cheapest"), foreground: .forestInk, background: .sagePale)
+                        Tag(text: String(localized: "Cheapest"), foreground: .brandInk, background: .brandPale)
                     }
                 }
                 if let seen = price?.createdAt {
@@ -205,7 +205,7 @@ private struct PriceRow: View {
             } else {
                 Text("Add Price")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.forestInk)
+                    .foregroundStyle(Color.brandInk)
             }
         }
         .contentShape(.rect)

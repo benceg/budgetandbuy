@@ -53,7 +53,7 @@ struct AddShopView: View {
                     chosen = ShopChoice(name: query)
                 } label: {
                     Label(query.isEmpty ? "Add a Shop by Name" : "Add “\(query)” by Name", systemImage: "character.cursor.ibeam")
-                        .foregroundStyle(Color.forestInk)
+                        .foregroundStyle(Color.brandInk)
                 }
             } footer: {
                 Text("Without a location, you’ll enter the journey yourself, and the app can’t tell when you arrive.")

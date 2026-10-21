@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 1248 1248"
+   width="1248"
+   height="1248"
+   version="1.1"
+   id="svg26"
+   sodipodi:docname="shopping-bag-slate.svg"
+   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview26"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.5"
+     inkscape:cx="623"
+     inkscape:cy="624"
+     inkscape:window-width="1710"
+     inkscape:window-height="1045"
+     inkscape:window-x="0"
+     inkscape:window-y="34"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg26" />
+  <title
+     id="title1">Folded shopping-list bag — Slate</title>
+  <desc
+     id="desc1">Lossless vector artwork with identical shared paths across all five palettes and smooth deterministic gradients.</desc>
+  <defs
+     id="defs18">
+    <linearGradient
+       id="bg"
+       x1="1%"
+       y1="0%"
+       x2="96%"
+       y2="100%">
+      <stop
+         offset="0%"
+         stop-color="#80ACC5"
+         id="stop1" />
+      <stop
+         offset="50%"
+         stop-color="#6496B3"
+         id="stop2" />
+      <stop
+         offset="100%"
+         stop-color="#41738F"
+         id="stop3" />
+    </linearGradient>
+    <linearGradient
+       id="paper"
+       x1="12%"
+       y1="5%"
+       x2="91%"
+       y2="100%">
+      <stop
+         offset="0"
+         stop-color="#FFFCF3"
+         id="stop4" />
+      <stop
+         offset="1"
+         stop-color="#FBF5E9"
+         id="stop5" />
+    </linearGradient>
+    <linearGradient
+       id="side"
+       x1="95%"
+       y1="0%"
+       x2="7%"
+       y2="88%">
+      <stop
+         offset="0"
+         stop-color="#174B6B"
+         id="stop6" />
+      <stop
+         offset="1"
+         stop-color="#255F80"
+         id="stop7" />
+    </linearGradient>
+    <linearGradient
+       id="inside"
+       x1="8%"
+       y1="0%"
+       x2="100%"
+       y2="100%">
+      <stop
+         offset="0"
+         stop-color="#082C4A"
+         id="stop8" />
+      <stop
+         offset="1"
+         stop-color="#124667"
+         id="stop9" />
+    </linearGradient>
+    <linearGradient
+       id="baseFold"
+       x1="0"
+       y1="0"
+       x2="100%"
+       y2="100%">
+      <stop
+         offset="0"
+         stop-color="#286489"
+         id="stop10" />
+      <stop
+         offset="1"
+         stop-color="#10446A"
+         id="stop11" />
+    </linearGradient>
+    <linearGradient
+       id="strip"
+       x1="0%"
+       y1="0%"
+       x2="100%"
+       y2="100%">
+      <stop
+         offset="0"
+         stop-color="#2F6C8E"
+         id="stop12" />
+      <stop
+         offset="1"
+         stop-color="#235B7F"
+         id="stop13" />
+    </linearGradient>
+    <linearGradient
+       id="bar"
+       x1="0%"
+       y1="0%"
+       x2="100%"
+       y2="100%">
+      <stop
+         offset="0"
+         stop-color="#6598B3"
+         id="stop14" />
+      <stop
+         offset="1"
+         stop-color="#467897"
+         id="stop15" />
+    </linearGradient>
+    <radialGradient
+       id="shadow">
+      <stop
+         offset="0"
+         stop-color="#1E4961"
+         stop-opacity=".35"
+         id="stop16" />
+      <stop
+         offset=".50"
+         stop-color="#1E4961"
+         stop-opacity=".14"
+         id="stop17" />
+      <stop
+         offset="1"
+         stop-color="#1E4961"
+         stop-opacity="0"
+         id="stop18" />
+    </radialGradient>
+  </defs>
+  <!-- Square, edge-to-edge background, with no artificial rounded corners. -->
+  <rect
+     x="0"
+     y="0"
+     width="1248"
+     height="1248"
+     fill="url(#bg)"
+     id="rect18" />
+  <!-- Smooth vector radial shadow; no photographic/noise/AI texture. -->
+  <ellipse
+     cx="664"
+     cy="1005"
+     rx="484"
+     ry="129"
+     fill="url(#shadow)"
+     transform="rotate(-13 664 1005)"
+     id="ellipse18" />
+  <!-- Folded back section, a single consistent polygonal solid. -->
+  <path
+     d="M 306,450 C 294,448 286,454 281,470 L 152,832 C 143,861 154,883 178,897 L 446,1053 C 472,1068 493,1046 487,1013 L 337,481 C 332,462 322,449 306,450 Z"
+     fill="url(#side)"
+     id="path18" />
+  <!-- Deep internal cavity, starting at the same upper fold edge. -->
+  <path
+     d="M 305,450 C 318,449 329,457 335,479 L 435,825 L 318,852 L 323,511 C 323,477 318,458 305,450 Z"
+     fill="url(#inside)"
+     id="path19" />
+  <!-- Bottom outer fold, aligned at the same vertex for every colorway. -->
+  <path
+     d="m 318,852 128,201 C 352,998 248,944 178,897 166,890 318,852 318,852 Z"
+     fill="url(#baseFold)"
+     id="path20"
+     sodipodi:nodetypes="cccc" />
+  <!-- Inner right-hand fold, darker and further inside the bag. -->
+  <path
+     d="M 318,852 L 435,825 L 487,1013 C 493,1046 472,1068 446,1053 Z"
+     fill="url(#inside)"
+     id="path21" />
+  <!-- Back of handle visible through its opening, behind the cream face. -->
+  <!-- One and the same cream silhouette and handle cutout, using the evenodd rule. -->
+  <path
+     fill="url(#paper)"
+     fill-rule="evenodd"
+     d="  M 309,450 L 432,426 L 400,310  C 388,267 409,226 458,214 Q 465,211 478,209  L 694,163 C 748,148 790,178 802,230 L 831,353 L 899,341  C 923,336 941,347 948,374 L 1066,807  C 1085,867 1058,921 995,945  Q 987,948 978,950 L 505,1057 C 472,1067 454,1058 446,1034  L 334,484 C 329,465 319,451 309,450 Z  M 500,413 L 762,365 L 735,265  C 730,245 720,237 707,241 L 495,283  C 478,286 471,296 475,314 Z  "
+     id="path23" />
+  <!-- Three matching pill cut-outs, precisely repeated in every icon. -->
+  <g
+     fill="none"
+     stroke="url(#bar)"
+     stroke-width="63"
+     stroke-linecap="round"
+     id="g26">
+    <path
+       d="M 529,590 L 832,526"
+       id="path24" />
+    <path
+       d="M 570,734 L 867,670"
+       id="path25" />
+    <path
+       d="M 610,878 L 901,813"
+       id="path26" />
+  </g>
+</svg>

@@ -13,9 +13,9 @@ struct TripSummaryView: View {
                     VStack(spacing: 10) {
                         Image(systemName: "checkmark")
                             .font(.system(size: 34, weight: .bold))
-                            .foregroundStyle(Color.onForest)
+                            .foregroundStyle(Color.onBrand)
                             .frame(width: 80, height: 80)
-                            .background(Color.forest, in: .circle)
+                            .background(Color.brand, in: .circle)
                             .symbolEffect(.bounce, options: .nonRepeating)
                             .accessibilityHidden(true)
                         Text("Shop done")
@@ -34,7 +34,7 @@ struct TripSummaryView: View {
                                 ? String(localized: "For the \(trip.pricedCount) items with prices")
                                 : nil,
                             systemImage: "basket",
-                            tint: .forestInk
+                            tint: .brandInk
                         )
                         if let compared = trip.comparedStoreName {
                             if trip.savedMinor != 0 {
@@ -82,7 +82,7 @@ struct TripSummaryView: View {
                 .font(.headline)
                 .foregroundStyle(tint)
                 .frame(width: 40, height: 40)
-                .background(Color.sagePale, in: .circle)
+                .background(Color.brandPale, in: .circle)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.headline)

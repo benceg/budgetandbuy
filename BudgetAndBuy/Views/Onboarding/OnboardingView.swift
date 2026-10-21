@@ -71,7 +71,7 @@ private struct ProgressDots: View {
         HStack(spacing: 6) {
             ForEach(0..<count, id: \.self) { index in
                 Capsule()
-                    .fill(index == current ? Color.forest : Color.sage.opacity(0.4))
+                    .fill(index == current ? Color.brand : Color.brandSoft.opacity(0.4))
                     .frame(width: index == current ? 20 : 7, height: 7)
             }
         }
@@ -128,7 +128,7 @@ private struct WelcomeStep: View {
 
     var body: some View {
         StepLayout {
-            Image("Logo")
+            Image(AppTheme.current.logoName)
                 .resizable()
                 .frame(width: 96, height: 96)
                 .clipShape(.rect(cornerRadius: 22, style: .continuous))
@@ -159,9 +159,9 @@ private struct Feature: View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: systemImage)
                 .font(.title3)
-                .foregroundStyle(Color.forestInk)
+                .foregroundStyle(Color.brandInk)
                 .frame(width: 44, height: 44)
-                .background(Color.sagePale, in: .circle)
+                .background(Color.brandPale, in: .circle)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.headline)
@@ -254,7 +254,7 @@ private struct ShopsStep: View {
                         namingShop = ShopChoice(name: query)
                     } label: {
                         Label("Add “\(query)” by name", systemImage: "plus.circle")
-                            .foregroundStyle(Color.forestInk)
+                            .foregroundStyle(Color.brandInk)
                             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     }
                     .buttonStyle(.plain)
@@ -349,14 +349,14 @@ private struct PlaceAddRow: View {
             } else if isAdded {
                 Label("Added", systemImage: "checkmark")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.forestInk)
+                    .foregroundStyle(Color.brandInk)
             } else {
                 Button("Add", action: add)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.onForest)
+                    .foregroundStyle(Color.onBrand)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 7)
-                    .background(Color.forest, in: .capsule)
+                    .background(Color.brand, in: .capsule)
                     .buttonStyle(.plain)
             }
         }
@@ -390,7 +390,7 @@ struct PriceExample: View {
                     .font(.title)
                     .foregroundStyle(Color.ink)
                     .frame(width: 52, height: 52)
-                    .background(Color.sagePale, in: .circle)
+                    .background(Color.brandPale, in: .circle)
                 VStack(alignment: .leading) {
                     Text("Semi-skimmed milk")
                         .font(.headline)
@@ -417,7 +417,7 @@ struct PriceExample: View {
             }
             Spacer()
             if isCheapest {
-                Tag(text: String(localized: "Cheapest"), foreground: .forestInk, background: .sagePale)
+                Tag(text: String(localized: "Cheapest"), foreground: .brandInk, background: .brandPale)
             }
             Text(Money.format(price))
                 .font(.headline)
@@ -441,9 +441,9 @@ struct HowItWorksSteps: View {
         HStack(alignment: .top, spacing: 14) {
             Text(number, format: .number)
                 .font(.headline)
-                .foregroundStyle(Color.onForest)
+                .foregroundStyle(Color.onBrand)
                 .frame(width: 32, height: 32)
-                .background(Color.forest, in: .circle)
+                .background(Color.brand, in: .circle)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.headline)
@@ -532,10 +532,10 @@ private struct FirstListStep: View {
                                 Text(starter)
                             }
                             .font(.subheadline.weight(.medium))
-                            .foregroundStyle(isPicked ? Color.onForest : Color.ink)
+                            .foregroundStyle(isPicked ? Color.onBrand : Color.ink)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(isPicked ? Color.forest : Color.surface, in: .capsule)
+                            .background(isPicked ? Color.brand : Color.surface, in: .capsule)
                         }
                         .buttonStyle(.plain)
                         .accessibilityAddTraits(isPicked ? .isSelected : [])

@@ -116,18 +116,18 @@ private struct InsightCard: View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Worth the trip?", systemImage: "lightbulb")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.onForest.opacity(0.85))
+                .foregroundStyle(Color.onBrand.opacity(0.85))
             Text("Save \(Money.format(saving.amountMinor)) at \(store.name ?? "")")
                 .font(.title2.bold())
-                .foregroundStyle(Color.onForest)
+                .foregroundStyle(Color.onBrand)
             Text(detail)
                 .font(.subheadline)
-                .foregroundStyle(Color.onForest.opacity(0.85))
+                .foregroundStyle(Color.onBrand.opacity(0.85))
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.forest, in: .rect(cornerRadius: 22, style: .continuous))
+        .background(Color.brand, in: .rect(cornerRadius: 22, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 
@@ -190,9 +190,9 @@ private struct StopCard: View {
                     if let number {
                         Text(number, format: .number)
                             .font(.subheadline.bold())
-                            .foregroundStyle(Color.onForest)
+                            .foregroundStyle(Color.onBrand)
                             .frame(width: 26, height: 26)
-                            .background(Color.forest, in: .circle)
+                            .background(Color.brand, in: .circle)
                     }
                     StoreBadge(store: stop.store, size: 40)
                     VStack(alignment: .leading, spacing: 2) {
@@ -302,7 +302,7 @@ private struct RouteMap: View {
             } label: {
                 Label("Directions in Maps", systemImage: "arrow.triangle.turn.up.right.diamond")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.forestInk)
+                    .foregroundStyle(Color.brandInk)
                     .frame(maxWidth: .infinity, minHeight: 48)
             }
             .buttonStyle(.plain)

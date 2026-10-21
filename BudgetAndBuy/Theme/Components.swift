@@ -30,17 +30,17 @@ extension View {
     }
 }
 
-/// The main action on a screen: a full-width forest-green capsule.
+/// The main action on a screen: a full-width brand-green capsule.
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline)
-            .foregroundStyle(Color.onForest)
+            .foregroundStyle(Color.onBrand)
             .frame(maxWidth: .infinity, minHeight: 54)
             .padding(.horizontal, 20)
-            .background(isEnabled ? Color.forest : Color.sage, in: .capsule)
+            .background(isEnabled ? Color.brand : Color.brandSoft, in: .capsule)
             .opacity(configuration.isPressed ? 0.85 : 1)
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .animation(.snappy(duration: 0.2), value: configuration.isPressed)
@@ -52,10 +52,10 @@ struct SecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline)
-            .foregroundStyle(Color.forestInk)
+            .foregroundStyle(Color.brandInk)
             .frame(maxWidth: .infinity, minHeight: 50)
             .padding(.horizontal, 20)
-            .background(Color.sagePale, in: .capsule)
+            .background(Color.brandPale, in: .capsule)
             .opacity(configuration.isPressed ? 0.8 : 1)
     }
 }
@@ -85,12 +85,12 @@ struct ChipPicker<Value: Hashable>: View {
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
-                        .foregroundStyle(isSelected ? Color.onForest : Color.ink)
+                        .foregroundStyle(isSelected ? Color.onBrand : Color.ink)
                         .padding(.horizontal, 8)
                         .frame(maxWidth: .infinity, minHeight: 36)
                         .background {
                             if isSelected {
-                                Capsule().fill(Color.forest).matchedGeometryEffect(id: "selection", in: namespace)
+                                Capsule().fill(Color.brand).matchedGeometryEffect(id: "selection", in: namespace)
                             }
                         }
                         .contentShape(.capsule)
@@ -153,7 +153,7 @@ struct Tag: View {
 /// How far through a budget, as a rounded bar.
 struct ProgressBar: View {
     let fraction: Double
-    var color: Color = .forest
+    var color: Color = .brand
     var height: CGFloat = 10
 
     var body: some View {
@@ -225,9 +225,9 @@ struct EmptyState<Actions: View>: View {
                 }
             }
             .font(.system(size: 34))
-            .foregroundStyle(Color.forestInk)
+            .foregroundStyle(Color.brandInk)
             .frame(width: 84, height: 84)
-            .background(Color.sagePale, in: .circle)
+            .background(Color.brandPale, in: .circle)
             .accessibilityHidden(true)
 
             VStack(spacing: 6) {

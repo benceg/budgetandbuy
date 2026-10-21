@@ -42,9 +42,9 @@ struct HouseholdScreen: View {
                     VStack(spacing: 14) {
                         Image(systemName: "house")
                             .font(.system(size: 34))
-                            .foregroundStyle(Color.forestInk)
+                            .foregroundStyle(Color.brandInk)
                             .frame(width: 84, height: 84)
-                            .background(Color.sagePale, in: .circle)
+                            .background(Color.brandPale, in: .circle)
                         if isOwner {
                             TextField("Household Name", text: $name)
                                 .font(.title2.bold())
@@ -69,6 +69,13 @@ struct HouseholdScreen: View {
                 .onSurface()
 
                 Section {
+                    AppearancePicker()
+                } header: {
+                    SectionHeading(title: "Appearance").textCase(nil)
+                }
+                .onSurface()
+
+                Section {
                     if members.isEmpty {
                         MemberRow(name: String(localized: "You"), status: String(localized: "Owner"))
                     } else {
@@ -82,7 +89,7 @@ struct HouseholdScreen: View {
                         HStack {
                             Label(share == nil ? "Invite People" : "Manage Members", systemImage: "person.crop.circle.badge.plus")
                                 .font(.body.weight(.semibold))
-                                .foregroundStyle(Color.forestInk)
+                                .foregroundStyle(Color.brandInk)
                             if isPreparingShare {
                                 Spacer()
                                 ProgressView()
@@ -113,7 +120,7 @@ struct HouseholdScreen: View {
                 } header: {
                     SectionHeading(title: "Settings").textCase(nil)
                 }
-                .tint(.forest)
+                .tint(.brand)
                 .onSurface()
 
                 Section {
@@ -129,7 +136,7 @@ struct HouseholdScreen: View {
                 #if DEBUG
                 Section {
                     Button("Load Example Shops and List") { isConfirmingExampleData = true }
-                        .foregroundStyle(Color.forestInk)
+                        .foregroundStyle(Color.brandInk)
                     Button("Erase All Data", role: .destructive) { isConfirmingErase = true }
                         .foregroundStyle(Color.apricot)
                 } header: {
@@ -258,9 +265,9 @@ private struct MemberRow: View {
         HStack(spacing: 12) {
             Text(initials)
                 .font(.subheadline.bold())
-                .foregroundStyle(Color.forestInk)
+                .foregroundStyle(Color.brandInk)
                 .frame(width: 40, height: 40)
-                .background(Color.sagePale, in: .circle)
+                .background(Color.brandPale, in: .circle)
                 .accessibilityHidden(true)
             VStack(alignment: .leading) {
                 Text(name)

@@ -51,12 +51,12 @@ struct BudgetPage: View {
                 }
             }
             if list.budgetMinor > 0 {
-                ProgressBar(fraction: progress.fraction, color: progress.isOver ? .apricot : .forest)
+                ProgressBar(fraction: progress.fraction, color: progress.isOver ? .apricot : .brand)
                 Text(progress.isOver
                      ? String(localized: "\(Money.format(-progress.remainingMinor)) over budget")
                      : String(localized: "\(Money.format(progress.remainingMinor)) to spare"))
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(progress.isOver ? Color.apricot : Color.forestInk)
+                    .foregroundStyle(progress.isOver ? Color.apricot : Color.brandInk)
             }
             Text(basis(estimate))
                 .font(.footnote)
@@ -96,9 +96,9 @@ private struct AisleBreakdown: View {
                 HStack(spacing: 12) {
                     Image(systemName: aisle.category.symbolName)
                         .font(.subheadline)
-                        .foregroundStyle(Color.forestInk)
+                        .foregroundStyle(Color.brandInk)
                         .frame(width: 36, height: 36)
-                        .background(Color.sagePale, in: .circle)
+                        .background(Color.brandPale, in: .circle)
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
                             Text(aisle.category.title)
@@ -110,7 +110,7 @@ private struct AisleBreakdown: View {
                                 .monospacedDigit()
                                 .foregroundStyle(Color.ink)
                         }
-                        ProgressBar(fraction: Double(aisle.totalMinor) / Double(max(1, largest)), color: .sage, height: 6)
+                        ProgressBar(fraction: Double(aisle.totalMinor) / Double(max(1, largest)), color: .brandSoft, height: 6)
                     }
                 }
                 .accessibilityElement(children: .combine)
@@ -148,12 +148,12 @@ private struct MonthBudget: View {
                 }
             }
             if household.monthlyBudgetMinor > 0 {
-                ProgressBar(fraction: progress.fraction, color: progress.isOver ? .apricot : .forest)
+                ProgressBar(fraction: progress.fraction, color: progress.isOver ? .apricot : .brand)
                 Text(progress.isOver
                      ? String(localized: "\(Money.format(-progress.remainingMinor)) over budget")
                      : String(localized: "\(Money.format(progress.remainingMinor)) left this month"))
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(progress.isOver ? Color.apricot : Color.forestInk)
+                    .foregroundStyle(progress.isOver ? Color.apricot : Color.brandInk)
             }
             Text("Counts every trip the household has finished this month, across all its lists.")
                 .font(.footnote)

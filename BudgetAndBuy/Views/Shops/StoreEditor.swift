@@ -116,7 +116,7 @@ struct StoreEditor: View {
                         get: { noticesArrivals },
                         set: { enabled in Task { await StoreArrivalMonitor.shared.setEnabled(enabled) } }
                     ))
-                    .tint(.forest)
+                    .tint(.brand)
                 } header: {
                     Text("Location")
                 } footer: {

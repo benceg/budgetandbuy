@@ -12,7 +12,7 @@ struct MainTabView: View {
     let households: [Household]
     @Binding var selectedHouseholdID: String
 
-    @State private var tab: AppTab = .lists
+    @SceneStorage("selectedTab") private var tab: AppTab = .lists
 
     var body: some View {
         TabView(selection: $tab) {
@@ -29,13 +29,17 @@ struct MainTabView: View {
                 HouseholdScreen(household: household)
             }
         }
-        .tint(.forestInk)
+        .tint(.brandInk)
         // The tab bar stays put when you open a list, so nothing pops in and
         // out; it shrinks out of the way as you scroll down instead.
         .tabBarMinimizeBehavior(.onScrollDown)
         #if DEBUG
         .onAppear {
-            if let debugTab = DebugLaunch.tab { tab = debugTab }
+            if let debugTab = DebugLaunch.tab {
+                tab = debugTab
+            } else if DebugLaunch.opensFirstList || DebugLaunch.opensLastList {
+                tab = .lists
+            }
         }
         #endif
     }

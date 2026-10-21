@@ -15,7 +15,7 @@ struct ShoppingLiveActivity: Widget {
         ActivityConfiguration(for: ShoppingActivityAttributes.self) { context in
             LockScreenView(context: context)
                 .activityBackgroundTint(.canvas)
-                .activitySystemActionForegroundColor(.forestInk)
+                .activitySystemActionForegroundColor(.brandInk)
         } dynamicIsland: { context in
             let color = ListAppearance.color(named: context.attributes.colorName)
             return DynamicIsland {

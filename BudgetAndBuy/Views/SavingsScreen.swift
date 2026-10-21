@@ -62,33 +62,33 @@ struct SavingsScreen: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Saved by shopping around")
                     .font(.subheadline)
-                    .foregroundStyle(Color.onForest.opacity(0.8))
+                    .foregroundStyle(Color.onBrand.opacity(0.8))
                 Text(Money.format(stats.savedMinor))
                     .font(.system(size: 44, weight: .bold))
                     .monospacedDigit()
                     .contentTransition(.numericText())
-                    .foregroundStyle(Color.onForest)
+                    .foregroundStyle(Color.onBrand)
             }
-            Divider().overlay(Color.onForest.opacity(0.25))
+            Divider().overlay(Color.onBrand.opacity(0.25))
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "leaf.fill")
                     .font(.title3)
-                    .foregroundStyle(Color.forest)
+                    .foregroundStyle(Color.brand)
                     .frame(width: 40, height: 40)
-                    .background(Color.sagePale, in: .circle)
+                    .background(Color.brandPale, in: .circle)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(CarbonFormat.format(stats.carbonAvoidedKg)) CO₂e avoided")
                         .font(.headline)
-                        .foregroundStyle(Color.onForest)
+                        .foregroundStyle(Color.onBrand)
                     Text(carbonDetail(stats.carbonAvoidedKg))
                         .font(.subheadline)
-                        .foregroundStyle(Color.onForest.opacity(0.8))
+                        .foregroundStyle(Color.onBrand.opacity(0.8))
                 }
             }
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.forest, in: .rect(cornerRadius: 24, style: .continuous))
+        .background(Color.brand, in: .rect(cornerRadius: 24, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 

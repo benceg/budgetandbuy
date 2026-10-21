@@ -55,6 +55,7 @@ struct RootView: View {
     @AppStorage("selectedHouseholdID") private var selectedID = ""
     @AppStorage("knownSharedHouseholdIDs") private var knownSharedIDs = ""
     @AppStorage(OnboardingView.completedKey) private var hasCompletedOnboarding = false
+    @AppStorage(AppTheme.storageKey) private var theme: AppTheme = .sage
     @State private var joinedHousehold: Household?
 
     private var ownHousehold: Household? {
@@ -65,7 +66,9 @@ struct RootView: View {
         Group {
             if let household = HouseholdSelection.preferred(from: Array(households), selectedID: selectedID) {
                 MainTabView(household: household, households: Array(households), selectedHouseholdID: $selectedID)
-                    .id(household.objectID)
+                    // Colours are read as they're drawn, so a new theme
+                    // rebuilds the screens; the selected tab is kept.
+                    .id("\(household.objectID.uriRepresentation())-\(theme.rawValue)")
                     .fullScreenCover(isPresented: Binding(
                         get: { !hasCompletedOnboarding },
                         set: { if !$0 { hasCompletedOnboarding = true } }

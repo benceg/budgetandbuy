@@ -80,7 +80,7 @@ struct ShopsScreen: View {
                 Button { isAdding = true } label: {
                     Label("Add a Shop", systemImage: "plus.circle.fill")
                         .font(.body.weight(.semibold))
-                        .foregroundStyle(Color.forestInk)
+                        .foregroundStyle(Color.brandInk)
                 }
             } footer: {
                 Text("Each shop keeps its own prices. Add the ones you choose between, even if you rarely go, to see what a longer trip would save.")
@@ -102,7 +102,7 @@ struct ShopsScreen: View {
                                 .foregroundStyle(Color.inkSecondary)
                         }
                     }
-                    .tint(.forest)
+                    .tint(.brand)
                 }
                 .onSurface()
             }

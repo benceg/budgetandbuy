@@ -25,7 +25,7 @@ Open `BudgetAndBuy.xcodeproj` in Xcode 27 or later. The first time you run on a 
 - **Savings** tab: money saved and carbon avoided, from finished trips.
 - **Household** tab: members and invitations, the monthly budget, settings and help.
 - First launch runs a four-step introduction (`OnboardingView.swift`) that adds shops and a first list.
-- Colours and shared components live in `Shared/Palette.swift` and `Theme/Components.swift`. The app icon's source is `Tools/AppIcon/icon.svg`.
+- Colours and shared components live in `Shared/Palette.swift` and `Theme/Components.swift`. There are five themes (sage by default), each with a matching app icon; both are chosen in Household → Appearance. The icons' sources are in `Tools/AppIcon`.
 
 ## Product icons
 

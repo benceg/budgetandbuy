@@ -59,7 +59,7 @@ struct ListsScreen: View {
                     } label: {
                         Label("New List", systemImage: "plus.circle.fill")
                             .font(.body.weight(.semibold))
-                            .foregroundStyle(Color.forestInk)
+                            .foregroundStyle(Color.brandInk)
                     }
                 } header: {
                     if !lists.isEmpty {
@@ -134,7 +134,7 @@ struct ListsScreen: View {
         let stats = TripStats(trips: trips, period: .month)
         return Button { tab = .savings } label: {
             HStack(spacing: 12) {
-                SummaryTile(title: "Saved this month", value: Money.format(stats.savedMinor), systemImage: "sterlingsign", tint: .forestInk)
+                SummaryTile(title: "Saved this month", value: Money.format(stats.savedMinor), systemImage: "sterlingsign", tint: .brandInk)
                 SummaryTile(title: "CO₂ avoided", value: CarbonFormat.format(stats.carbonAvoidedKg), systemImage: "leaf", tint: .leaf)
             }
         }
@@ -161,7 +161,7 @@ struct SummaryTile: View {
     let title: LocalizedStringResource
     let value: String
     let systemImage: String
-    var tint: Color = .forestInk
+    var tint: Color = .brandInk
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -169,7 +169,7 @@ struct SummaryTile: View {
                 .font(.headline)
                 .foregroundStyle(tint)
                 .frame(width: 34, height: 34)
-                .background(Color.sagePale, in: .circle)
+                .background(Color.brandPale, in: .circle)
             VStack(alignment: .leading, spacing: 2) {
                 Text(value)
                     .font(.title2.bold())
@@ -232,9 +232,9 @@ private struct ShopsPrompt: View {
             HStack(spacing: 12) {
                 Image(systemName: "storefront")
                     .font(.title3)
-                    .foregroundStyle(Color.forestInk)
+                    .foregroundStyle(Color.brandInk)
                     .frame(width: 44, height: 44)
-                    .background(Color.sagePale, in: .circle)
+                    .background(Color.brandPale, in: .circle)
                 Text("Add the shops you use")
                     .font(.headline)
                     .foregroundStyle(Color.ink)

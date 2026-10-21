@@ -34,7 +34,7 @@ struct StartShoppingSheet: View {
                     } label: {
                         Label("Add a Shop", systemImage: "plus.circle.fill")
                             .font(.body.weight(.semibold))
-                            .foregroundStyle(Color.forestInk)
+                            .foregroundStyle(Color.brandInk)
                     }
                 } footer: {
                     Text("Tick things off as they go in your basket. The first time you buy something at a shop, you’ll be asked what it cost, so next time you can compare.")
@@ -76,7 +76,7 @@ private struct ShopChoiceRow: View {
                 HStack(spacing: 6) {
                     Text("\(Image(systemName: option.store.travel.symbolName)) \(option.store.journey)")
                         .foregroundStyle(Color.inkSecondary)
-                    if isCheapest { Tag(text: String(localized: "Cheapest"), foreground: .forestInk, background: .sagePale) }
+                    if isCheapest { Tag(text: String(localized: "Cheapest"), foreground: .brandInk, background: .brandPale) }
                     if isClosest { Tag(text: String(localized: "Closest")) }
                 }
                 .font(.subheadline)

@@ -76,7 +76,7 @@ struct ItemsPage: View {
             if !items.isEmpty && toBuy.isEmpty {
                 Section {
                     Label("Everything’s in the basket", systemImage: "checkmark.circle")
-                        .foregroundStyle(Color.forestInk)
+                        .foregroundStyle(Color.brandInk)
                 }
                 .onSurface()
             }
@@ -105,7 +105,7 @@ struct ItemsPage: View {
         HStack(spacing: 12) {
             Image(systemName: "plus")
                 .font(.title3.weight(.semibold))
-                .foregroundStyle(Color.forestInk)
+                .foregroundStyle(Color.brandInk)
                 .frame(width: 28)
                 .accessibilityHidden(true)
             TextField("Add an item", text: $newItemName)
@@ -116,7 +116,7 @@ struct ItemsPage: View {
                 Button("Add", action: addTyped)
                     .font(.subheadline.weight(.semibold))
                     .buttonStyle(.borderless)
-                    .foregroundStyle(Color.forestInk)
+                    .foregroundStyle(Color.brandInk)
             }
         }
         .padding(.vertical, 6)
@@ -264,7 +264,7 @@ private struct AisleHeader: View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Image(systemName: systemImage)
-                    .foregroundStyle(Color.forestInk)
+                    .foregroundStyle(Color.brandInk)
                 Text(title)
                     .foregroundStyle(Color.ink)
                 Text(count, format: .number)
@@ -298,7 +298,7 @@ private struct ItemRow: View {
                     HStack(spacing: 12) {
                         Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
                             .font(.title2)
-                            .foregroundStyle(item.isChecked ? Color.forestInk : Color.sage)
+                            .foregroundStyle(item.isChecked ? Color.brandInk : Color.brandSoft)
                             .contentTransition(.symbolEffect(.replace))
                         ProductIcon(product: item.product)
                             .font(.title2)
@@ -342,7 +342,7 @@ private struct ItemRow: View {
         }
         .swipeActions(edge: .leading) {
             Button(item.isChecked ? "Undo" : "In Basket", systemImage: item.isChecked ? "arrow.uturn.backward" : "basket", action: onToggle)
-                .tint(.forest)
+                .tint(.brand)
         }
     }
 
@@ -367,7 +367,7 @@ private struct ItemRow: View {
                 } else {
                     Button("Add Price", action: onPrice)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.forestInk)
+                        .foregroundStyle(Color.brandInk)
                         .buttonStyle(.borderless)
                 }
             }
@@ -430,7 +430,7 @@ private struct SuggestionRow: View {
             Spacer()
             Image(systemName: "plus.circle.fill")
                 .font(.title3)
-                .foregroundStyle(Color.forestInk)
+                .foregroundStyle(Color.brandInk)
         }
         .accessibilityLabel("Add \(suggestion.title)")
     }
