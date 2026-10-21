@@ -115,6 +115,10 @@ struct ListsScreen: View {
             }
             #if DEBUG
             .task {
+                if DebugLaunch.opensLastList {
+                    try? await Task.sleep(for: .milliseconds(300))
+                    if let last = lists.last { path.append(last) }
+                }
                 if DebugLaunch.opensFirstList, let first = lists.first {
                     path.append(first)
                     if DebugLaunch.opensFirstItem, let item = (first.items ?? []).sorted(by: Item.isOlder).first {

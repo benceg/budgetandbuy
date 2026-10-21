@@ -22,6 +22,9 @@ struct HouseholdScreen: View {
     @State private var sharingDelegate: SharingDelegate?
     @State private var isEditingBudget = false
     @State private var isShowingHowItWorks = false
+    #if DEBUG
+    @State private var isConfirmingExampleData = false
+    #endif
 
     private var isOwner: Bool { !household.isSharedWithMe }
 
@@ -121,6 +124,19 @@ struct HouseholdScreen: View {
                 }
                 .foregroundStyle(Color.ink)
                 .onSurface()
+
+                #if DEBUG
+                Section {
+                    Button("Load Example Shops and List") { isConfirmingExampleData = true }
+                        .foregroundStyle(Color.forestInk)
+                } header: {
+                    SectionHeading(title: "Developer").textCase(nil)
+                } footer: {
+                    Text("Adds Aldi, Sainsbury’s, Tesco Express and Waitrose around Coulsdon with a fortnight of prices, and an example weekly list. Only in development builds.")
+                        .foregroundStyle(Color.inkSecondary)
+                }
+                .onSurface()
+                #endif
             }
             .themedList()
             .navigationTitle("Household")
@@ -130,6 +146,13 @@ struct HouseholdScreen: View {
             .sheet(isPresented: $isShowingHowItWorks) {
                 HowItWorksSheet()
             }
+            #if DEBUG
+            .confirmationDialog("Load example data into “\(household.name ?? "")”?", isPresented: $isConfirmingExampleData, titleVisibility: .visible) {
+                Button("Load Example Data") { ExampleData.load(into: household) }
+            } message: {
+                Text("It syncs to iCloud like anything else you add, including to anyone you share the household with.")
+            }
+            #endif
             .alert(
                 "Couldn’t Share Household",
                 isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })

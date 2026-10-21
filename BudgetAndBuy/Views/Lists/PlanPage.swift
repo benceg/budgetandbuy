@@ -149,22 +149,25 @@ private struct PlanSummary: View {
                 Spacer()
                 HeroAmount(minorUnits: plan.totalMinor, size: 28)
             }
-            HStack(spacing: 6) {
-                Text(plan.pricedCount == plan.itemCount
-                     ? String(localized: "All \(plan.itemCount) items")
-                     : String(localized: "\(plan.pricedCount) of \(plan.itemCount) items priced"))
-                Text("·")
-                Text(String(localized: "\(plan.travelMinutes) min travel"))
-                if let carbon = plan.carbonKg {
-                    Text("·")
-                    Text("\(CarbonFormat.format(carbon)) CO₂e")
-                }
-            }
-            .font(.subheadline)
+            Text(details)
+                .font(.subheadline)
             .foregroundStyle(Color.inkSecondary)
         }
         .card()
         .accessibilityElement(children: .combine)
+    }
+
+    private var details: String {
+        var parts = [
+            plan.pricedCount == plan.itemCount
+                ? String(localized: "All \(plan.itemCount) items")
+                : String(localized: "\(plan.pricedCount) of \(plan.itemCount) items priced"),
+            String(localized: "\(plan.travelMinutes) min travel"),
+        ]
+        if let carbon = plan.carbonKg {
+            parts.append(String(localized: "\(CarbonFormat.format(carbon)) CO₂e"))
+        }
+        return parts.joined(separator: " · ")
     }
 }
 

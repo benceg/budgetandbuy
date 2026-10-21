@@ -168,7 +168,7 @@ enum GroceryCatalogue {
         E("Cake", .bakery, "cake", also: ["Sponge cake", "Victoria sponge"]),
         E("Birthday cake", .bakery, "birthday-cake"),
         E("Cupcakes", .bakery, "cupcake", also: ["Muffins", "Fairy cakes"]),
-        E("Pies", .bakery, "pie", also: ["Pork pie", "Mince pies", "Quiche"]),
+        E("Pies", .bakery, "pie", also: ["Pork pie", "Mince pies", "Quiche", "Tart", "Lemon tart", "Bakewell tart"]),
         E("Apple pie", .bakery, "apple-pie"),
         E("Cheesecake", .bakery, "cheesecake"),
         E("Sandwiches", .bakery, "sandwich"),

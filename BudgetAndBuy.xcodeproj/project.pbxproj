@@ -379,6 +379,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Budget & Buy";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Budget & Buy notices when you arrive at one of your stores and switches on shopping mode, even when the app is closed. Your location is only checked on your iPhone.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Budget & Buy uses your location to find your stores on the map.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -413,6 +415,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Budget & Buy";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Budget & Buy notices when you arrive at one of your stores and switches on shopping mode, even when the app is closed. Your location is only checked on your iPhone.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Budget & Buy uses your location to find your stores on the map.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

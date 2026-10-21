@@ -26,16 +26,19 @@ struct BudgetAndBuyApp: App {
 /// Launch arguments for exploring the UI in the simulator:
 /// -sampleData uses in-memory sample data (-shopping: shopping at the Co-op) and skips
 /// the introduction unless -onboarding is also passed; -tab shops|savings|household
-/// picks a tab; -openFirstList opens the first list; -page plan|budget picks
+/// picks a tab; -openFirstList (or -openLastList) opens a list; -page plan|budget picks
 /// its page; -openItem opens its first item; -addShop opens Add a Shop;
-/// -onboardingStep 1…3 opens the introduction at a later step.
+/// -onboardingStep 1…3 opens the introduction at a later step; -exampleData
+/// loads the Coulsdon example shops and list.
 enum DebugLaunch {
     private static let arguments = ProcessInfo.processInfo.arguments
     static let usesSampleData = arguments.contains("-sampleData")
     static let showsOnboarding = arguments.contains("-onboarding")
     static let isShopping = arguments.contains("-shopping")
+    static let loadsExampleData = arguments.contains("-exampleData")
     static let onboardingStep = UserDefaults.standard.integer(forKey: "onboardingStep")
     static let opensFirstList = arguments.contains("-openFirstList")
+    static let opensLastList = arguments.contains("-openLastList")
     static let opensFirstItem = arguments.contains("-openItem")
     static let opensAddShop = arguments.contains("-addShop")
     static let tab = UserDefaults.standard.string(forKey: "tab").flatMap(AppTab.init(rawValue:))
@@ -75,6 +78,7 @@ struct RootView: View {
         #if DEBUG
         .onAppear {
             if DebugLaunch.usesSampleData { hasCompletedOnboarding = !DebugLaunch.showsOnboarding }
+            if DebugLaunch.loadsExampleData, let household = households.first { ExampleData.load(into: household) }
         }
         #endif
         .onChange(of: households.map(\.objectID), initial: true) {
