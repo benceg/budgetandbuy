@@ -248,10 +248,11 @@ private struct StopCard: View {
 
 private struct RouteMap: View {
     let stops: [ShoppingPlan.Stop]
+    @State private var position: MapCameraPosition = .automatic
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Map(initialPosition: .automatic, interactionModes: [.pan, .zoom]) {
+            Map(position: $position, interactionModes: [.pan, .zoom]) {
                 UserAnnotation()
                 ForEach(stops) { stop in
                     if let coordinate = stop.store.coordinate {
@@ -261,6 +262,11 @@ private struct RouteMap: View {
                 }
             }
             .frame(height: 180)
+            // A different plan has different shops: frame them, even if
+            // you'd moved the map.
+            .onChange(of: stops.map(\.id)) {
+                withAnimation { position = .automatic }
+            }
 
             Button {
                 openInMaps()
