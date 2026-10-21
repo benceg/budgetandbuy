@@ -262,8 +262,13 @@ private struct ShopsStep: View {
             }
             .card()
         } buttons: {
-            Button(stores.isEmpty ? "Skip for Now" : "Continue", action: next)
-                .buttonStyle(stores.isEmpty ? AnyButtonStyle(.secondary) : AnyButtonStyle(.primary))
+            if stores.isEmpty {
+                Button("Skip for Now", action: next)
+                    .buttonStyle(.secondary)
+            } else {
+                Button("Continue", action: next)
+                    .buttonStyle(.primary)
+            }
         }
         .task { await finder.start() }
         .task(id: query) {
@@ -356,19 +361,6 @@ private struct PlaceAddRow: View {
             }
         }
         .padding(.vertical, 8)
-    }
-}
-
-/// Lets one call site choose between button styles.
-struct AnyButtonStyle: ButtonStyle {
-    private let make: (Configuration) -> AnyView
-
-    init(_ style: some ButtonStyle) {
-        make = { AnyView(style.makeBody(configuration: $0)) }
-    }
-
-    func makeBody(configuration: Configuration) -> some View {
-        make(configuration)
     }
 }
 

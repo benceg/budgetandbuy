@@ -18,18 +18,18 @@ final class ShopFinder {
     private(set) var results: [MKMapItem] = []
     private(set) var isSearching = false
 
-    private let manager = CLLocationManager()
     private var session: CLServiceSession?
 
     // Groceries and toiletries; anything else can be found by name.
     private static let categories: [MKPointOfInterestCategory] = [.foodMarket, .bakery, .pharmacy]
 
-    init() {
-        updateAccess()
-    }
+    // Views create this as @State, which builds a new one each time they're
+    // redrawn and keeps the first; so nothing here touches Core Location
+    // until start() runs.
+    init() {}
 
     private func updateAccess() {
-        switch manager.authorizationStatus {
+        switch CLLocationManager().authorizationStatus {
         case .authorizedAlways, .authorizedWhenInUse: access = .allowed
         case .denied, .restricted: access = .denied
         default: access = .unknown
@@ -38,6 +38,7 @@ final class ShopFinder {
 
     /// Asks for your location if needed, then lists shops around you.
     func start() async {
+        updateAccess()
         session = CLServiceSession(authorization: .whenInUse)
         do {
             for try await update in CLLocationUpdate.liveUpdates() {
