@@ -27,7 +27,8 @@ struct BudgetAndBuyApp: App {
 /// -sampleData uses in-memory sample data (-shopping: shopping at the Co-op) and skips
 /// the introduction unless -onboarding is also passed; -tab shops|savings|household
 /// picks a tab; -openFirstList (or -openLastList) opens a list; -page plan|budget picks
-/// its page; -tickFirstItem ticks its first item a second later (-goal cheapest|fewestStops|closest picks a plan); -openItem opens its first item; -addShop opens Add a Shop;
+/// its page; -tickFirstItem ticks its first item a second later; -typeItem
+/// TEXT types into its add field (-goal cheapest|fewestStops|closest picks a plan); -openItem opens its first item; -addShop opens Add a Shop;
 /// -onboardingStep 1…3 opens the introduction at a later step; -exampleData
 /// loads the Coulsdon example shops and list.
 enum DebugLaunch {
@@ -40,6 +41,7 @@ enum DebugLaunch {
     static let opensFirstList = arguments.contains("-openFirstList")
     static let opensLastList = arguments.contains("-openLastList")
     static let ticksFirstItem = arguments.contains("-tickFirstItem")
+    static let typedItem = UserDefaults.standard.string(forKey: "typeItem")
     static let opensFirstItem = arguments.contains("-openItem")
     static let opensAddShop = arguments.contains("-addShop")
     static let tab = UserDefaults.standard.string(forKey: "tab").flatMap(AppTab.init(rawValue:))

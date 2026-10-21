@@ -38,8 +38,12 @@ struct ItemsPage: View {
             Section {
                 addField
                 ForEach(suggestions) { suggestion in
-                    Button { add(suggestion) } label: {
+                    if case .added = suggestion {
                         SuggestionRow(suggestion: suggestion)
+                    } else {
+                        Button { add(suggestion) } label: {
+                            SuggestionRow(suggestion: suggestion)
+                        }
                     }
                 }
             }
@@ -66,6 +70,7 @@ struct ItemsPage: View {
                                 if isCollapsed { collapsedAisles.remove(aisle.category) } else { collapsedAisles.insert(aisle.category) }
                             }
                         }
+                        .closesKeyboard(when: isAdding) { isAdding = false }
                     }
                     .onSurface()
                 }
@@ -93,14 +98,20 @@ struct ItemsPage: View {
                     AisleHeader(title: "In Basket", icon: Image(systemName: "basket"), count: inBasket.count, isCollapsed: !isBasketExpanded) {
                         withAnimation { isBasketExpanded.toggle() }
                     }
+                    .closesKeyboard(when: isAdding) { isAdding = false }
                 }
                 .onSurface()
             }
         }
         .themedList()
         .contentMargins(.top, 4, for: .scrollContent)
+        .scrollDismissesKeyboard(.immediately)
         #if DEBUG
         .task {
+            if let typed = DebugLaunch.typedItem {
+                newItemName = typed
+                isAdding = true
+            }
             guard DebugLaunch.ticksFirstItem else { return }
             try? await Task.sleep(for: .seconds(1))
             if let first = toBuy.first { toggle(first) }
@@ -134,7 +145,8 @@ struct ItemsPage: View {
         .padding(.vertical, 6)
     }
 
-    /// The household's own products first, then everyday things it hasn't bought yet.
+    /// The household's own products first, then everyday things it hasn't
+    /// bought yet. Things already on the list show too, marked as added.
     private var suggestions: [Suggestion] {
         guard let household = list.household else { return [] }
         let onList = Set(toBuy.compactMap(\.product))
@@ -143,15 +155,15 @@ struct ItemsPage: View {
         let products = household.products(matching: typed.name, limit: 8)
         let known = Set(products.compactMap(\.normalizedName))
         let fromHousehold = products
-            .filter { !onList.contains($0) && !$0.matches(normalizedName: typedKey, size: typed.size) }
-            .map(Suggestion.product)
+            .filter { onList.contains($0) || !$0.matches(normalizedName: typedKey, size: typed.size) }
+            .map { onList.contains($0) ? Suggestion.added($0) : .product($0) }
         let fromCatalogue = GroceryCatalogue.entries(matching: typed.name, limit: 8)
             .filter { entry in
                 let key = ProductName.normalized(entry.name)
                 return key != typedKey && !known.contains(key)
             }
             .map(Suggestion.catalogue)
-        return Array((fromHousehold + fromCatalogue).prefix(4))
+        return Array((fromHousehold + fromCatalogue).prefix(5))
     }
 
     private var starterItems: some View {
@@ -210,6 +222,8 @@ struct ItemsPage: View {
             list.add(product)
         case .catalogue(let entry):
             list.addItem(named: entry.name)
+        case .added:
+            return
         }
         context.saveIfNeeded()
         newItemName = ""
@@ -226,6 +240,7 @@ struct ItemsPage: View {
             onToggle: { toggle(item) },
             onPrice: { price(item) }
         )
+        .closesKeyboard(when: isAdding) { isAdding = false }
     }
 
     /// Ticking shows the tick where the item is, then moves it to the basket a
@@ -425,17 +440,19 @@ private struct ItemRow: View {
 enum Suggestion: Identifiable {
     case product(Product)
     case catalogue(GroceryCatalogue.Entry)
+    /// Already on the list: shown, but not added again.
+    case added(Product)
 
     var id: String {
         switch self {
-        case .product(let product): product.objectID.uriRepresentation().absoluteString
+        case .product(let product), .added(let product): product.objectID.uriRepresentation().absoluteString
         case .catalogue(let entry): "catalogue:\(entry.name)"
         }
     }
 
     var title: String {
         switch self {
-        case .product(let product): product.title
+        case .product(let product), .added(let product): product.title
         case .catalogue(let entry): entry.name
         }
     }
@@ -444,11 +461,16 @@ enum Suggestion: Identifiable {
 private struct SuggestionRow: View {
     let suggestion: Suggestion
 
+    private var isAdded: Bool {
+        if case .added = suggestion { return true }
+        return false
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             Group {
                 switch suggestion {
-                case .product(let product):
+                case .product(let product), .added(let product):
                     ProductIcon(product: product)
                 case .catalogue(let entry):
                     if let icon = entry.icon {
@@ -462,13 +484,37 @@ private struct SuggestionRow: View {
             .foregroundStyle(Color.inkSecondary)
             .frame(width: 28)
             Text(suggestion.title)
-                .foregroundStyle(Color.ink)
+                .foregroundStyle(isAdded ? Color.inkSecondary : Color.ink)
             Spacer()
-            Image(systemName: "plus.circle.fill")
-                .font(.title3)
-                .foregroundStyle(Color.brandInk)
+            if isAdded {
+                Text("Added")
+                    .font(.caption.weight(.semibold))
+                    .textCase(.uppercase)
+                    .kerning(0.6)
+                    .foregroundStyle(Color.inkSecondary)
+            } else {
+                Image(systemName: "plus.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(Color.brandInk)
+            }
         }
-        .accessibilityLabel("Add \(suggestion.title)")
+        .opacity(isAdded ? 0.7 : 1)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(isAdded ? "\(suggestion.title), already on the list" : "Add \(suggestion.title)")
+    }
+}
+
+private extension View {
+    /// While typing, a tap here closes the keyboard instead of doing what it
+    /// normally would.
+    func closesKeyboard(when isTyping: Bool, close: @escaping () -> Void) -> some View {
+        overlay {
+            if isTyping {
+                Color.clear
+                    .contentShape(.rect)
+                    .onTapGesture(perform: close)
+            }
+        }
     }
 }
 
