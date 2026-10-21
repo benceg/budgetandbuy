@@ -57,4 +57,16 @@ struct ExampleDataTests {
         #expect(comparison.options.allSatisfy { $0.pricedCount < comparison.itemCount })
         #expect(comparison.split != nil)
     }
+
+    @Test func erasingEmptiesTheHousehold() throws {
+        ExampleData.load(into: household)
+        household.monthlyBudgetMinor = 40_000
+        ExampleData.erase(household)
+        let context = persistence.viewContext
+        for entity in ["ShoppingList", "Item", "Product", "Price", "Store", "Trip"] {
+            #expect(try context.count(for: NSFetchRequest<NSManagedObject>(entityName: entity)) == 0, "\(entity) left behind")
+        }
+        #expect(household.monthlyBudgetMinor == 0)
+        #expect(!household.isDeleted)
+    }
 }

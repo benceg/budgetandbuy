@@ -24,6 +24,7 @@ struct HouseholdScreen: View {
     @State private var isShowingHowItWorks = false
     #if DEBUG
     @State private var isConfirmingExampleData = false
+    @State private var isConfirmingErase = false
     #endif
 
     private var isOwner: Bool { !household.isSharedWithMe }
@@ -129,10 +130,12 @@ struct HouseholdScreen: View {
                 Section {
                     Button("Load Example Shops and List") { isConfirmingExampleData = true }
                         .foregroundStyle(Color.forestInk)
+                    Button("Erase All Data", role: .destructive) { isConfirmingErase = true }
+                        .foregroundStyle(Color.apricot)
                 } header: {
                     SectionHeading(title: "Developer").textCase(nil)
                 } footer: {
-                    Text("Adds Aldi, Sainsbury’s, Tesco Express and Waitrose around Coulsdon with a fortnight of prices, and an example weekly list. Only in development builds.")
+                    Text("Load adds Aldi, Sainsbury’s, Tesco Express and Waitrose around Coulsdon with a fortnight of prices, and an example weekly list. Erase deletes every list, product, price, shop and trip in this household. Only in development builds.")
                         .foregroundStyle(Color.inkSecondary)
                 }
                 .onSurface()
@@ -151,6 +154,11 @@ struct HouseholdScreen: View {
                 Button("Load Example Data") { ExampleData.load(into: household) }
             } message: {
                 Text("It syncs to iCloud like anything else you add, including to anyone you share the household with.")
+            }
+            .confirmationDialog("Erase everything in “\(household.name ?? "")”?", isPresented: $isConfirmingErase, titleVisibility: .visible) {
+                Button("Erase All Data", role: .destructive) { ExampleData.erase(household) }
+            } message: {
+                Text("Every list, product, price, shop and trip is deleted, on all your devices and for everyone the household is shared with. This can’t be undone.")
             }
             #endif
             .alert(

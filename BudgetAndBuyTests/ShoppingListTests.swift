@@ -43,6 +43,24 @@ struct ShoppingListTests {
         #expect(item.quantity == 1)
     }
 
+    @Test func untickingPutsAnItemBackInItsAisle() throws {
+        let list = household.addList()
+        let milk = try #require(list.addItem(named: "Milk"))
+        try context.save()
+        let toBuy = NSFetchRequest<Item>(entityName: "Item")
+        toBuy.predicate = NSPredicate(format: "list == %@ AND isChecked == NO", list)
+
+        milk.setChecked(true)
+        try context.save()
+        #expect(try context.fetch(toBuy).isEmpty)
+
+        milk.setChecked(false)
+        try context.save()
+        #expect(try context.fetch(toBuy) == [milk])
+        #expect(milk.checkedAt == nil)
+        #expect(ProductCategory.aisles(of: [milk]).map(\.category) == [.dairyAndEggs])
+    }
+
     @Test func listsInAHouseholdShareProducts() throws {
         let weekly = household.addList()
         let party = household.addList()

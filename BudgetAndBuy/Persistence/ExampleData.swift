@@ -142,6 +142,22 @@ enum ExampleData {
         }
     }
 
+    /// Deletes everything in a household: lists, products and their prices,
+    /// shops and trips. The household itself, its name and its members stay.
+    @MainActor
+    static func erase(_ household: Household) {
+        guard let context = household.managedObjectContext else { return }
+        let contents: [NSManagedObject] = Array(household.lists ?? []) + Array(household.products ?? [])
+            + Array(household.stores ?? []) + Array(household.trips ?? [])
+        for object in contents {
+            context.delete(object)
+        }
+        household.monthlyBudgetMinor = 0
+        context.saveIfNeeded()
+        UserDefaults.standard.set("", forKey: "shoppingStoreID")
+        Task { await StoreArrivalMonitor.shared.refresh() }
+    }
+
     /// A shelf price: the typical price scaled by the shop's price level, with a
     /// little steady variation per product, ending in 5 or 9 like a real label.
     private static func price(_ pence: Double, at shop: Shop, for name: String) -> Int64 {

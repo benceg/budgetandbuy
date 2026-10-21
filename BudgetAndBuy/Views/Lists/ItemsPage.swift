@@ -4,7 +4,9 @@ import SwiftUI
 /// What's on the list, by aisle, with a field for adding more at the top.
 struct ItemsPage: View {
     @ObservedObject var list: ShoppingList
-    let items: [Item]
+    let toBuy: [Item]
+    /// Most recently added to the basket first.
+    let inBasket: [Item]
     let stores: [Store]
     let shoppingStore: Store?
 
@@ -19,11 +21,7 @@ struct ItemsPage: View {
     /// Everyday things to start an empty list with.
     private static let starters = ["Milk", "Bread", "Eggs", "Bananas", "Apples", "Cheese", "Butter", "Pasta", "Tea", "Coffee", "Toilet roll", "Washing-up liquid"]
 
-    private var toBuy: [Item] { items.filter { !$0.isChecked } }
-
-    private var inBasket: [Item] {
-        items.filter(\.isChecked).sorted { ($0.checkedAt ?? .distantPast) > ($1.checkedAt ?? .distantPast) }
-    }
+    private var items: [Item] { toBuy + inBasket }
 
     private var aisles: [(category: ProductCategory, items: [Item])] {
         guard groupsByAisle else { return [] }

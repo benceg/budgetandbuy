@@ -19,7 +19,10 @@ struct ListScreen: View {
     @ObservedObject var list: ShoppingList
     @Environment(\.managedObjectContext) private var context
     @Environment(\.dismiss) private var dismiss
-    @FetchRequest private var items: FetchedResults<Item>
+    // Fetched separately, so ticking or unticking moves an item between the
+    // two and the screen updates; a single fetch doesn't notice the change.
+    @FetchRequest private var toBuyResults: FetchedResults<Item>
+    @FetchRequest private var basketResults: FetchedResults<Item>
     @FetchRequest private var stores: FetchedResults<Store>
     // Fetched so totals and row prices refresh whenever any price changes.
     @FetchRequest private var prices: FetchedResults<Price>
@@ -35,9 +38,14 @@ struct ListScreen: View {
 
     init(list: ShoppingList) {
         self.list = list
-        _items = FetchRequest(
+        _toBuyResults = FetchRequest(
             sortDescriptors: [NSSortDescriptor(key: "createdAt", ascending: true)],
-            predicate: NSPredicate(format: "list == %@", list),
+            predicate: NSPredicate(format: "list == %@ AND isChecked == NO", list),
+            animation: .default
+        )
+        _basketResults = FetchRequest(
+            sortDescriptors: [NSSortDescriptor(key: "checkedAt", ascending: false)],
+            predicate: NSPredicate(format: "list == %@ AND isChecked == YES", list),
             animation: .default
         )
         // A list being deleted has no household; match nothing rather than everything.
@@ -56,21 +64,22 @@ struct ListScreen: View {
         stores.first { $0.uuid?.uuidString == shoppingStoreID }
     }
 
-    private var toBuy: [Item] { items.filter { !$0.isChecked } }
-    private var inBasket: [Item] { items.filter(\.isChecked) }
+    private var toBuy: [Item] { Array(toBuyResults) }
+    private var inBasket: [Item] { Array(basketResults) }
+    private var items: [Item] { toBuy + inBasket }
 
     var body: some View {
         Group {
             switch page {
             case .items:
-                ItemsPage(list: list, items: Array(items), stores: Array(stores), shoppingStore: shoppingStore)
+                ItemsPage(list: list, toBuy: toBuy, inBasket: inBasket, stores: Array(stores), shoppingStore: shoppingStore)
             case .plan:
-                PlanPage(list: list, items: toBuy.isEmpty ? Array(items) : toBuy, stores: Array(stores)) { store in
+                PlanPage(list: list, items: toBuy.isEmpty ? items : toBuy, stores: Array(stores)) { store in
                     shoppingStoreID = store.uuid?.uuidString ?? ""
                     withAnimation { page = .items }
                 }
             case .budget:
-                BudgetPage(list: list, items: Array(items), stores: Array(stores), shoppingStore: shoppingStore)
+                BudgetPage(list: list, items: items, stores: Array(stores), shoppingStore: shoppingStore)
             }
         }
         .safeAreaBar(edge: .top) {
