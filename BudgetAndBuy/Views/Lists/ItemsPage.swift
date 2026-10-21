@@ -19,9 +19,14 @@ struct ItemsPage: View {
     @State private var pricing: PricingTarget?
     /// Items just ticked, shown ticked where they are before moving to the basket.
     @State private var ticking: Set<NSManagedObjectID> = []
+    /// Items shrinking away before they move between the list and the basket.
+    @State private var leaving: Set<NSManagedObjectID> = []
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// How long a ticked item stays in place before moving to the basket.
-    private static let tickPause: Duration = .milliseconds(600)
+    private static let tickPause: Duration = .milliseconds(450)
+    /// How long a row takes to shrink away before it moves.
+    private static let leaveDuration = 0.22
 
     /// Everyday things to start an empty list with.
     private static let starters = ["Milk", "Bread", "Eggs", "Bananas", "Apples", "Cheese", "Butter", "Pasta", "Tea", "Coffee", "Toilet roll", "Washing-up liquid"]
@@ -237,6 +242,8 @@ struct ItemsPage: View {
             store: shoppingStore,
             price: shoppingStore.flatMap { item.product?.latestPrice(at: $0) },
             isTicking: ticking.contains(item.objectID),
+            isLeaving: leaving.contains(item.objectID),
+            reduceMotion: reduceMotion,
             onToggle: { toggle(item) },
             onPrice: { price(item) }
         )
@@ -245,29 +252,52 @@ struct ItemsPage: View {
 
     /// Ticking shows the tick where the item is, then moves it to the basket a
     /// moment later; tapping again in that moment keeps it on the list.
+    /// Unticking moves it straight back.
     private func toggle(_ item: Item) {
         let id = item.objectID
+        guard !leaving.contains(id) else { return }
         if item.isChecked {
-            withAnimation { item.setChecked(false) }
-            context.saveIfNeeded()
+            Task { await move(item, toBasket: false) }
         } else if ticking.contains(id) {
             ticking.remove(id)
         } else {
             ticking.insert(id)
             Task {
                 try? await Task.sleep(for: Self.tickPause)
-                guard ticking.remove(id) != nil, !item.isDeleted, !item.isChecked else { return }
-                putInBasket(item)
+                guard ticking.contains(id), !item.isDeleted, !item.isChecked else { return }
+                await move(item, toBasket: true)
+                ticking.remove(id)
             }
+        }
+    }
+
+    /// Shrinks the row away, then moves the item, letting the list close the
+    /// gap and fade it in at the other end.
+    private func move(_ item: Item, toBasket: Bool) async {
+        let id = item.objectID
+        withAnimation(.easeIn(duration: Self.leaveDuration)) { _ = leaving.insert(id) }
+        try? await Task.sleep(for: .seconds(Self.leaveDuration))
+        guard !item.isDeleted else {
+            leaving.remove(id)
+            return
+        }
+        // Processing the change inside the animation updates the list's
+        // fetches straight away, so the move animates rather than jumping.
+        withAnimation(.snappy(duration: 0.35)) {
+            item.setChecked(toBasket)
+            context.processPendingChanges()
+            leaving.remove(id)
+        }
+        if toBasket {
+            putInBasket(item)
+        } else {
+            context.saveIfNeeded()
         }
     }
 
     /// Putting an item in the basket while shopping confirms its price here,
     /// or asks for one if this shop has none yet.
     private func putInBasket(_ item: Item) {
-        withAnimation {
-            item.setChecked(true)
-        }
         if let store = shoppingStore, let product = item.product {
             if let latest = product.latestPrice(at: store) {
                 store.recordPrice(latest.amountMinor, for: product)
@@ -337,6 +367,9 @@ private struct ItemRow: View {
     let price: Price?
     /// Just ticked and about to move to the basket.
     let isTicking: Bool
+    /// Shrinking away before moving between the list and the basket.
+    let isLeaving: Bool
+    let reduceMotion: Bool
     let onToggle: () -> Void
     let onPrice: () -> Void
 
@@ -378,6 +411,8 @@ private struct ItemRow: View {
             }
         }
         .navigationLinkIndicatorVisibility(.hidden)
+        .scaleEffect(isLeaving && !reduceMotion ? 0.85 : 1)
+        .opacity(isLeaving ? 0 : 1)
         .contextMenu {
             Button("Increase Quantity", systemImage: "plus") { changeQuantity(by: 1) }
             Button("Decrease Quantity", systemImage: "minus") { changeQuantity(by: -1) }
