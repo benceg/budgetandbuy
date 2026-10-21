@@ -117,7 +117,12 @@ struct ListsScreen: View {
             .task {
                 if DebugLaunch.opensLastList {
                     try? await Task.sleep(for: .milliseconds(300))
-                    if let last = lists.last { path.append(last) }
+                    if let last = lists.last {
+                        path.append(last)
+                        if DebugLaunch.opensFirstItem, let item = (last.items ?? []).sorted(by: Item.alphabetically).first {
+                            path.append(item)
+                        }
+                    }
                 }
                 if DebugLaunch.opensFirstList, let first = lists.first {
                     path.append(first)

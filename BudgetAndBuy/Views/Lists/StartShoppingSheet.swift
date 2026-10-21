@@ -23,6 +23,7 @@ struct StartShoppingSheet: View {
                             ShopChoiceRow(
                                 option: option,
                                 itemCount: comparison.itemCount,
+                                notSoldCount: comparison.unavailableItems(at: option.store).count,
                                 isCheapest: option.store == cheapest && stores.count > 1,
                                 isClosest: option.store == comparison.nearest && stores.count > 1
                             )
@@ -63,6 +64,7 @@ struct StartShoppingSheet: View {
 private struct ShopChoiceRow: View {
     let option: StoreComparison.Option
     let itemCount: Int
+    let notSoldCount: Int
     let isCheapest: Bool
     let isClosest: Bool
 
@@ -95,6 +97,11 @@ private struct ShopChoiceRow: View {
                     Text("No prices yet")
                         .font(.caption)
                         .foregroundStyle(Color.inkSecondary)
+                }
+                if notSoldCount > 0 {
+                    Text(notSoldCount == 1 ? "1 not sold here" : "\(notSoldCount) not sold here")
+                        .font(.caption)
+                        .foregroundStyle(Color.apricot)
                 }
             }
         }

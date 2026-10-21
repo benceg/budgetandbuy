@@ -35,9 +35,11 @@ struct ExampleDataTests {
         #expect(ranges[1] > ranges[0] && ranges[0] > ranges[3] && ranges[3] > ranges[2])
 
         let ice = try product("Ben & Jerry’s ice cream 465ml")
-        #expect(ice.prices?.compactMap(\.store?.name) == [ExampleData.tesco.name])
+        #expect(ice.prices?.filter { !$0.isUnavailable }.compactMap(\.store?.name) == [ExampleData.tesco.name])
+        let aldi = try store(ExampleData.aldi), waitrose = try store(ExampleData.waitrose)
+        #expect(ice.isUnavailable(at: aldi) || ice.isUnavailable(at: waitrose))
         let sourdough = try product("Duchy Organic sourdough 800g")
-        #expect(sourdough.prices?.compactMap(\.store?.name) == [ExampleData.waitrose.name])
+        #expect(sourdough.prices?.filter { !$0.isUnavailable }.compactMap(\.store?.name) == [ExampleData.waitrose.name])
     }
 
     @Test func loadingTwiceDuplicatesNothing() throws {

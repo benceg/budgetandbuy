@@ -1,7 +1,8 @@
 import CoreData
 import SwiftUI
 
-/// One thing on a list: how many, and what it costs at each of your shops.
+/// One thing on a list: how many, and whether each of your shops sells it
+/// and for how much.
 struct ItemDetailView: View {
     @ObservedObject var item: Item
     @Environment(\.managedObjectContext) private var context
@@ -39,7 +40,7 @@ struct ItemDetailView: View {
             VStack(spacing: 16) {
                 hero
                 quantity
-                pricesCard
+                storesCard
                 Button("Remove from List", role: .destructive, action: remove)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(Color.apricot)
@@ -123,32 +124,77 @@ struct ItemDetailView: View {
         .accessibilityLabel(Text(label))
     }
 
-    private var pricesCard: some View {
+    private var storesCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionHeading(title: "Prices")
+            SectionHeading(title: "Stores")
             if stores.isEmpty {
                 Text("Add the shops you use from the Shops tab, then prices you see appear here.")
                     .font(.subheadline)
                     .foregroundStyle(Color.inkSecondary)
             }
             ForEach(stores, id: \.objectID) { store in
-                Button {
-                    if let product { pricing = PricingTarget(product: product, store: store) }
-                } label: {
-                    PriceRow(store: store, price: product?.latestPrice(at: store), size: product?.size, isCheapest: store == cheapest, quantity: item.quantity)
+                HStack(spacing: 4) {
+                    Button {
+                        if let product { pricing = PricingTarget(product: product, store: store) }
+                    } label: {
+                        StoreRow(
+                            store: store,
+                            price: product?.latestPrice(at: store),
+                            isUnavailable: product?.isUnavailable(at: store) ?? false,
+                            size: product?.size,
+                            isCheapest: store == cheapest,
+                            quantity: item.quantity
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    availabilityMenu(for: store)
                 }
-                .buttonStyle(.plain)
                 if store != stores.last {
                     Divider().overlay(Color.hairline)
                 }
             }
             if !stores.isEmpty {
-                Text("Prices are saved when you tick this off while shopping, or tap a shop to add one.")
+                Text("Prices are saved when you tick this off while shopping, or tap a shop to add one. If a shop doesn’t sell it, mark it in the ⋯ menu so it isn’t suggested there.")
                     .font(.footnote)
                     .foregroundStyle(Color.inkSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .card()
+    }
+
+    private func availabilityMenu(for store: Store) -> some View {
+        let isUnavailable = product?.isUnavailable(at: store) ?? false
+        let hasPrice = product?.latestPrice(at: store) != nil
+        return Menu {
+            Button(hasPrice ? "Change Price…" : "Add Price…", systemImage: "tag") {
+                if let product { pricing = PricingTarget(product: product, store: store) }
+            }
+            if isUnavailable {
+                Button("Sold Here", systemImage: "checkmark.circle") { setAvailable(true, at: store) }
+            } else {
+                Button("Not Sold Here", systemImage: "nosign") { setAvailable(false, at: store) }
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color.inkSecondary)
+                .frame(width: 36, height: 44)
+                .contentShape(.rect)
+        }
+        .accessibilityLabel("Options for \(store.name ?? "")")
+    }
+
+    private func setAvailable(_ available: Bool, at store: Store) {
+        guard let product else { return }
+        withAnimation {
+            if available {
+                store.markAvailable(product)
+            } else {
+                store.markUnavailable(product)
+            }
+        }
+        context.saveIfNeeded()
     }
 
     private func remove() {
@@ -158,9 +204,10 @@ struct ItemDetailView: View {
     }
 }
 
-private struct PriceRow: View {
+private struct StoreRow: View {
     let store: Store
     let price: Price?
+    let isUnavailable: Bool
     let size: ProductSize?
     let isCheapest: Bool
     let quantity: Int16
@@ -168,16 +215,21 @@ private struct PriceRow: View {
     var body: some View {
         HStack(spacing: 12) {
             StoreBadge(store: store, size: 36)
+                .opacity(isUnavailable ? 0.45 : 1)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(store.name ?? "")
                         .font(.body.weight(.medium))
-                        .foregroundStyle(Color.ink)
+                        .foregroundStyle(isUnavailable ? Color.inkSecondary : Color.ink)
                     if isCheapest {
                         Tag(text: String(localized: "Cheapest"), foreground: .brandInk, background: .brandPale)
                     }
                 }
-                if let seen = price?.createdAt {
+                if isUnavailable {
+                    Text("Not sold here")
+                        .font(.caption)
+                        .foregroundStyle(Color.inkSecondary)
+                } else if let seen = price?.createdAt {
                     Text("Seen \(Text(seen, format: .relative(presentation: .named)))")
                         .font(.caption)
                         .foregroundStyle(Color.inkSecondary)
@@ -202,7 +254,7 @@ private struct PriceRow: View {
                             .foregroundStyle(Color.inkSecondary)
                     }
                 }
-            } else {
+            } else if !isUnavailable {
                 Text("Add Price")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.brandInk)

@@ -93,8 +93,13 @@ struct PlanPage: View {
                 .card()
         }
 
-        if !comparison.unpriced.isEmpty {
-            UnpricedCard(items: comparison.unpriced)
+        let notSold = comparison.notSoldAnywhere
+        let unpriced = comparison.unpriced.filter { !notSold.contains($0) }
+        if !notSold.isEmpty {
+            NotSoldCard(items: notSold)
+        }
+        if !unpriced.isEmpty {
+            UnpricedCard(items: unpriced)
         }
 
         if stores.count == 1 {
@@ -322,6 +327,25 @@ private struct RouteMap: View {
         case .drive: MKLaunchOptionsDirectionsModeDriving
         }
         item.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: mode])
+    }
+}
+
+private struct NotSoldCard: View {
+    let items: [Item]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(items.count == 1 ? "1 item isn’t sold at your shops" : "\(items.count) items aren’t sold at your shops")
+                .font(.headline)
+                .foregroundStyle(Color.ink)
+            Text(items.map(\.displayName).formatted(.list(type: .and)))
+                .font(.subheadline)
+                .foregroundStyle(Color.ink)
+            Text("Every shop you’ve added has been marked as not selling these. Add a shop that does from the Shops tab.")
+                .font(.footnote)
+                .foregroundStyle(Color.inkSecondary)
+        }
+        .card()
     }
 }
 

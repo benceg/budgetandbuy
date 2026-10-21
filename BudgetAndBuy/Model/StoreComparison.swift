@@ -47,11 +47,13 @@ struct StoreComparison {
     let split: Split?
     /// Items with no price at any store.
     let unpriced: [Item]
+    let stores: [Store]
 
     private let costs: [NSManagedObjectID: [NSManagedObjectID: Int64]]
 
     init(items: [Item], stores: [Store]) {
         self.items = items
+        self.stores = stores
 
         var costs: [NSManagedObjectID: [NSManagedObjectID: Int64]] = [:]
         var options: [Option] = []
@@ -100,6 +102,20 @@ struct StoreComparison {
             commonCount: common.count,
             extraMinutes: Int(store.travelMinutes) - Int(nearest.travelMinutes)
         )
+    }
+
+    /// Items the store has been marked as not selling.
+    func unavailableItems(at store: Store) -> [Item] {
+        items.filter { $0.product?.isUnavailable(at: store) == true }
+    }
+
+    /// Items none of the stores sell, as opposed to ones nobody has priced yet.
+    var notSoldAnywhere: [Item] {
+        guard !stores.isEmpty else { return [] }
+        return unpriced.filter { item in
+            guard let product = item.product else { return false }
+            return stores.allSatisfy { product.isUnavailable(at: $0) }
+        }
     }
 
     /// The items with a price at a store.

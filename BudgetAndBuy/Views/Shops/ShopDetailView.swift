@@ -2,7 +2,8 @@ import CoreData
 import MapKit
 import SwiftUI
 
-/// A shop: where it is, how you get there, and every price seen there.
+/// A shop: where it is, how you get there, every price seen there, and
+/// what it doesn't sell.
 struct ShopDetailView: View {
     @ObservedObject var store: Store
     @Environment(\.managedObjectContext) private var context
@@ -17,12 +18,16 @@ struct ShopDetailView: View {
         _prices = FetchRequest(sortDescriptors: [], predicate: NSPredicate(format: "store == %@", store), animation: .default)
     }
 
-    private var currentPrices: [Price] {
+    /// The newest record for each product, by name.
+    private var sightings: [Price] {
         Dictionary(grouping: prices.filter { $0.product != nil }) { $0.product!.objectID }
             .values
             .compactMap { $0.max(by: Price.isOlder) }
             .sorted { ($0.product?.title ?? "").localizedStandardCompare($1.product?.title ?? "") == .orderedAscending }
     }
+
+    private var currentPrices: [Price] { sightings.filter { !$0.isUnavailable } }
+    private var notSold: [Price] { sightings.filter(\.isUnavailable) }
 
     var body: some View {
         List {
@@ -58,6 +63,38 @@ struct ShopDetailView: View {
                     .textCase(nil)
             }
             .onSurface()
+
+            if !notSold.isEmpty {
+                Section {
+                    ForEach(notSold, id: \.objectID) { note in
+                        HStack(spacing: 12) {
+                            ProductIcon(product: note.product)
+                                .font(.title3)
+                                .foregroundStyle(Color.inkSecondary)
+                                .frame(width: 30)
+                            Text(note.product?.title ?? "")
+                                .foregroundStyle(Color.inkSecondary)
+                            Spacer()
+                        }
+                        .swipeActions {
+                            Button("Sold Here", systemImage: "checkmark") {
+                                if let product = note.product {
+                                    store.markAvailable(product)
+                                    context.saveIfNeeded()
+                                }
+                            }
+                            .tint(.brand)
+                        }
+                    }
+                } header: {
+                    SectionHeading(title: "Not sold here", detail: notSold.count.formatted())
+                        .textCase(nil)
+                } footer: {
+                    Text("Swipe left on one if they start selling it.")
+                        .foregroundStyle(Color.inkSecondary)
+                }
+                .onSurface()
+            }
         }
         .themedList()
         .navigationTitle(store.name ?? "")

@@ -47,6 +47,7 @@ extension Household {
                 guard let product = price.product.flatMap({ copies[$0.objectID] }) else { continue }
                 let priceCopy = copy.insertRelated(Price.self)
                 priceCopy.amountMinor = price.amountMinor
+                priceCopy.isUnavailable = price.isUnavailable
                 priceCopy.createdAt = price.createdAt
                 priceCopy.product = product
                 priceCopy.store = copy

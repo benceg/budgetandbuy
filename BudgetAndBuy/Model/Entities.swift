@@ -100,13 +100,15 @@ final class Store: NSManagedObject, Timestamped {
     }
 }
 
-/// A price seen for a product at a store. `createdAt` is when it was seen;
-/// the newest one is the current price.
+/// A price seen for a product at a store, or a note that it isn't sold
+/// there. `createdAt` is when it was seen; the newest one is current.
 @objc(Price)
 final class Price: NSManagedObject, Timestamped {
     @NSManaged var uuid: UUID?
     @NSManaged var createdAt: Date?
     @NSManaged var amountMinor: Int64
+    /// A sighting of the product not being sold there, rather than a price.
+    @NSManaged var isUnavailable: Bool
     @NSManaged var product: Product?
     @NSManaged var store: Store?
 

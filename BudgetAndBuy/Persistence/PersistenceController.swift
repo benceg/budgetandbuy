@@ -186,6 +186,7 @@ extension PersistenceController {
             coop.recordPrice(Int64(coopPrice), for: product)
         }
         coop.recordPrice(325, for: household.product(named: "Free-range eggs", size: ProductSize(amount: 6, unit: .pack)))
+        aldi.markUnavailable(household.product(named: "Coffee beans"))
 
         for (daysAgo, store, spent, saved, carbon, carbonSaved) in [
             (2, aldi, 4_120, 980, 4.8, -4.8), (9, coop, 1_460, -210, 0, 4.8), (16, aldi, 5_235, 1_140, 4.8, -4.8),

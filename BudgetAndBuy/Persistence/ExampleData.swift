@@ -30,7 +30,8 @@ enum ExampleData {
     static let shops = [aldi, sainsburys, tesco, waitrose]
 
     /// A product, its typical price in pence, and the shops that sell it:
-    /// A Aldi, S Sainsbury's, T Tesco Express, W Waitrose.
+    /// A Aldi, S Sainsbury's, T Tesco Express, W Waitrose. Most shops not
+    /// listed are marked as not selling it; a few are left unknown.
     private static let products: [(name: String, pence: Double, soldAt: String)] = [
         ("Semi-skimmed milk 4 pints", 145, "ASTW"),
         ("Free-range eggs 6 pack", 199, "ASTW"),
@@ -111,11 +112,16 @@ enum ExampleData {
             let (name, size) = ProductSize.split(entry.name)
             let product = household.product(named: name, size: size)
             product.fillInFromCatalogue()
-            for letter in entry.soldAt where letter != " " {
-                guard let shop = letters[letter], let store = stores[shop.name] else { continue }
-                // Prices seen over the last fortnight.
-                let seen = Calendar.current.date(byAdding: .day, value: -(index % 14), to: .now) ?? .now
-                store.recordPrice(price(entry.pence, at: shop, for: entry.name), for: product, on: seen)
+            // Prices seen over the last fortnight.
+            let seen = Calendar.current.date(byAdding: .day, value: -(index % 14), to: .now) ?? .now
+            for (shopIndex, (letter, shop)) in letters.sorted(by: { $0.key < $1.key }).enumerated() {
+                guard let store = stores[shop.name] else { continue }
+                if entry.soldAt.contains(letter) {
+                    store.recordPrice(price(entry.pence, at: shop, for: entry.name), for: product, on: seen)
+                } else if (index + shopIndex) % 4 != 0 {
+                    // Mostly noticed as not sold there; some just not looked for yet.
+                    store.markUnavailable(product, on: seen)
+                }
             }
         }
 

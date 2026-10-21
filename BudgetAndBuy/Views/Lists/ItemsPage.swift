@@ -235,6 +235,7 @@ struct ItemsPage: View {
                 ForEach(items, id: \.objectID) { item in
                     ItemTile(
                         item: item,
+                        isUnavailableHere: shoppingStore.map { item.product?.isUnavailable(at: $0) == true } ?? false,
                         isTicking: ticking.contains(item.objectID),
                         isLeaving: leaving.contains(item.objectID),
                         reduceMotion: reduceMotion,
@@ -545,8 +546,19 @@ private struct ItemRow: View {
             Button("Increase Quantity", systemImage: "plus") { changeQuantity(by: 1) }
             Button("Decrease Quantity", systemImage: "minus") { changeQuantity(by: -1) }
                 .disabled(item.quantity <= 1)
-            if store != nil {
+            if let store, let product = item.product {
                 Button(price == nil ? "Add Price…" : "Change Price…", systemImage: "tag", action: onPrice)
+                if product.isUnavailable(at: store) {
+                    Button("Sold Here", systemImage: "checkmark.circle") {
+                        store.markAvailable(product)
+                        item.managedObjectContext?.saveIfNeeded()
+                    }
+                } else {
+                    Button("Not Sold Here", systemImage: "nosign") {
+                        store.markUnavailable(product)
+                        item.managedObjectContext?.saveIfNeeded()
+                    }
+                }
             }
             Divider()
             Button("Remove from List", systemImage: "trash", role: .destructive, action: delete)
@@ -566,8 +578,12 @@ private struct ItemRow: View {
             if item.quantity > 1 {
                 Tag(text: "×\(item.quantity)")
             }
-            if store != nil {
-                if let price {
+            if let store {
+                if item.product?.isUnavailable(at: store) == true {
+                    Text("Not sold here")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.inkSecondary)
+                } else if let price {
                     VStack(alignment: .trailing, spacing: 0) {
                         Text(Money.format(price.amountMinor * Int64(item.quantity)))
                             .foregroundStyle(Color.ink)
@@ -604,6 +620,8 @@ private struct ItemRow: View {
 /// beneath. Tap to put it in the basket (or take it out); long press for details.
 private struct ItemTile: View {
     @ObservedObject var item: Item
+    /// Not sold at the shop you're in.
+    let isUnavailableHere: Bool
     let isTicking: Bool
     let isLeaving: Bool
     let reduceMotion: Bool
@@ -619,6 +637,7 @@ private struct ItemTile: View {
     private var looksChecked: Bool { item.isChecked || isTicking }
 
     private var detail: String? {
+        if isUnavailableHere { return String(localized: "Not sold here") }
         let parts = [item.product?.size?.formatted, item.quantity > 1 ? "×\(item.quantity)" : nil].compactMap(\.self)
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }

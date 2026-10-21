@@ -35,6 +35,7 @@
     <entity name="Price" representedClassName="Price" syncable="YES">
         <attribute name="amountMinor" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="isUnavailable" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="uuid" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <relationship name="product" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Product" inverseName="prices" inverseEntity="Product"/>
         <relationship name="store" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Store" inverseName="prices" inverseEntity="Store"/>

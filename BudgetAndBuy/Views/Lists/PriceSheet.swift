@@ -75,10 +75,22 @@ struct PriceSheet: View {
                     Button("Save", action: save)
                         .disabled(amount == nil)
                 }
+                if !target.isPrompt {
+                    ToolbarItem(placement: .bottomBar) {
+                        Button("Not Sold Here", systemImage: "nosign", action: markUnavailable)
+                            .labelStyle(.titleAndIcon)
+                    }
+                }
             }
             .onAppear { isFocused = true }
         }
         .presentationDetents([.medium])
+    }
+
+    private func markUnavailable() {
+        target.store.markUnavailable(target.product)
+        context.saveIfNeeded()
+        dismiss()
     }
 
     private func save() {
