@@ -203,7 +203,7 @@ struct ListScreen: View {
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             Menu("More", systemImage: "ellipsis") {
-                Button("Rename List…", systemImage: "pencil") { isEditingInfo = true }
+                Button("Edit List…", systemImage: "pencil") { isEditingInfo = true }
                 Toggle("Group by Aisle", systemImage: "square.grid.2x2", isOn: $groupsByAisle)
                 Button("Clear Basket", systemImage: "basket") { isConfirmingClear = true }
                     .disabled(inBasket.isEmpty)

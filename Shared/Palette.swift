@@ -29,25 +29,25 @@ enum AppTheme: String, CaseIterable, Identifiable, Sendable {
     /// The swatch itself.
     var swatch: Color { Color(light: palette.swatch, dark: palette.swatch) }
 
-    /// Fills use the swatch exactly. Text on a fill is white or dark,
-    /// whichever reads better; themed text on cards is the swatch, darkened
-    /// (or, at night, lightened) only as far as it needs to be readable.
+    /// Fills and themed text use the swatch exactly; at night Slate and
+    /// Lavender text are lightened a little to show on the dark cards. Text on
+    /// a fill is white or dark, whichever reads better.
     fileprivate var palette: ThemePalette {
         switch self {
         case .sage:
-            ThemePalette(swatch: 0x86AB81, onSwatchIsDark: true, ink: (0x607B5D, 0x86AB81),
+            ThemePalette(swatch: 0x86AB81, onSwatchIsDark: true, ink: (0x86AB81, 0x86AB81),
                          soft: (0xC6D6C2, 0x415441), pale: (0xE4EBDE, 0x354637))
         case .coral:
-            ThemePalette(swatch: 0xF15A3A, onSwatchIsDark: false, ink: (0xCA4C31, 0xF15A3A),
+            ThemePalette(swatch: 0xF15A3A, onSwatchIsDark: false, ink: (0xF15A3A, 0xF15A3A),
                          soft: (0xF7A491, 0x5E3423), pale: (0xFCD9CE, 0x533023))
         case .slate:
             ThemePalette(swatch: 0x41738F, onSwatchIsDark: false, ink: (0x41738F, 0x618BA2),
                          soft: (0x8EAABA, 0x24404C), pale: (0xD5DFE1, 0x22373B))
         case .amber:
-            ThemePalette(swatch: 0xEFAC40, onSwatchIsDark: true, ink: (0x976C28, 0xEFAC40),
+            ThemePalette(swatch: 0xEFAC40, onSwatchIsDark: true, ink: (0xEFAC40, 0xEFAC40),
                          soft: (0xF5CF8E, 0x5E4A23), pale: (0xFBEBD0, 0x534625))
         case .lavender:
-            ThemePalette(swatch: 0x8676B2, onSwatchIsDark: false, ink: (0x7B6DA4, 0x8C7DB6),
+            ThemePalette(swatch: 0x8676B2, onSwatchIsDark: false, ink: (0x8676B2, 0x8C7DB6),
                          soft: (0xB9AFD3, 0x3E3A52), pale: (0xE4DFE9, 0x353745))
         }
     }
@@ -82,7 +82,7 @@ extension Color {
     static let brand = Color(themed: { ($0.swatch, $0.swatch) })
     /// Text and icons on a `brand` fill.
     static let onBrand = Color(themed: { $0.onSwatchIsDark ? (0x15241B, 0x15241B) : (0xFFFFFF, 0xFFFFFF) })
-    /// The theme colour for text and icons on cards.
+    /// The theme colour for text, links and icons on cards.
     static let brandInk = Color(themed: { $0.ink })
     /// A lighter tint, for idle ticks, tracks and disabled buttons.
     static let brandSoft = Color(themed: { $0.soft })

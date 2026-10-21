@@ -209,14 +209,14 @@ private struct HouseholdSection: View {
                 }
                 Spacer()
                 NavigationLink(value: household) {
-                    Image(systemName: "gearshape")
-                        .font(.body)
-                        .foregroundStyle(Color.inkSecondary)
-                        .frame(width: 44, height: 36)
+                    Text("Edit")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Color.brandInk)
+                        .frame(minHeight: 36)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Settings for \(household.name ?? "")")
+                .accessibilityLabel("Edit \(household.name ?? "")")
             }
             .textCase(nil)
         }
