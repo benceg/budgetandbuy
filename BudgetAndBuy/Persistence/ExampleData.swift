@@ -92,7 +92,7 @@ enum ExampleData {
     /// Adds the shops, their prices and the example list to a household.
     /// Running it again tops things up rather than duplicating them.
     @MainActor
-    static func load(into household: Household) {
+    static func load(into household: Household, placingOnMap: Bool = true) {
         guard let context = household.managedObjectContext else { return }
         var stores: [String: Store] = [:]
         let existing = household.stores ?? []
@@ -136,6 +136,7 @@ enum ExampleData {
 
         context.saveIfNeeded()
         ProductCategorizer.shared.categorize(household.products ?? [])
+        guard placingOnMap else { return }
         Task {
             await placeOnMap(stores)
             await StoreArrivalMonitor.shared.refresh()
@@ -179,6 +180,9 @@ enum ExampleData {
             guard let items = try? await MKLocalSearch(request: request).start().mapItems,
                   let match = items.min(by: { $0.location.distance(from: expected) < $1.location.distance(from: expected) }),
                   match.location.distance(from: expected) < 3_000 else { continue }
+            // The shop may have been erased while Maps was searching.
+            guard !store.isDeleted, let context = store.managedObjectContext,
+                  (try? context.existingObject(with: store.objectID)) != nil else { continue }
             store.coordinate = match.location.coordinate
         }
         stores.values.first?.managedObjectContext?.saveIfNeeded()

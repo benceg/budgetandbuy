@@ -30,6 +30,9 @@ struct MainTabView: View {
             }
         }
         .tint(.forestInk)
+        // The tab bar stays put when you open a list, so nothing pops in and
+        // out; it shrinks out of the way as you scroll down instead.
+        .tabBarMinimizeBehavior(.onScrollDown)
         #if DEBUG
         .onAppear {
             if let debugTab = DebugLaunch.tab { tab = debugTab }

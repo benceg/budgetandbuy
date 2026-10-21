@@ -50,7 +50,6 @@ struct ItemDetailView: View {
         .canvasBackground()
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarVisibility(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Edit") { isEditing = true }

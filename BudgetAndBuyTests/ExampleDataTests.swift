@@ -17,7 +17,7 @@ struct ExampleDataTests {
     }
 
     @Test func loadsShopsPricesAndAList() throws {
-        ExampleData.load(into: household)
+        ExampleData.load(into: household, placingOnMap: false)
         #expect(household.stores?.count == 4)
         let list = try #require(household.lists?.first { $0.name == "Example Weekly Shop" })
         #expect(list.items?.count == 17)
@@ -25,7 +25,7 @@ struct ExampleDataTests {
     }
 
     @Test func shopsDifferInPriceAndRange() throws {
-        ExampleData.load(into: household)
+        ExampleData.load(into: household, placingOnMap: false)
         let milk = try product("Semi-skimmed milk 4 pints")
         let prices = try ExampleData.shops.map { try #require(milk.latestPrice(at: store($0))?.amountMinor) }
         // Aldi, Sainsbury's, Tesco Express, Waitrose: cheapest to dearest.
@@ -41,9 +41,9 @@ struct ExampleDataTests {
     }
 
     @Test func loadingTwiceDuplicatesNothing() throws {
-        ExampleData.load(into: household)
+        ExampleData.load(into: household, placingOnMap: false)
         let products = household.products?.count
-        ExampleData.load(into: household)
+        ExampleData.load(into: household, placingOnMap: false)
         #expect(household.stores?.count == 4)
         #expect(household.products?.count == products)
         #expect(household.lists?.count == 1)
@@ -51,7 +51,7 @@ struct ExampleDataTests {
     }
 
     @Test func noShopCoversTheWholeList() throws {
-        ExampleData.load(into: household)
+        ExampleData.load(into: household, placingOnMap: false)
         let list = try #require(household.lists?.first)
         let comparison = StoreComparison(items: Array(list.items ?? []), stores: Array(household.stores ?? []))
         #expect(comparison.options.allSatisfy { $0.pricedCount < comparison.itemCount })
@@ -59,7 +59,7 @@ struct ExampleDataTests {
     }
 
     @Test func erasingEmptiesTheHousehold() throws {
-        ExampleData.load(into: household)
+        ExampleData.load(into: household, placingOnMap: false)
         household.monthlyBudgetMinor = 40_000
         ExampleData.erase(household)
         let context = persistence.viewContext

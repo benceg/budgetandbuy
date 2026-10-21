@@ -106,7 +106,6 @@ struct ListScreen: View {
         // the pinned page tabs; on short pages that fed back into the scroll
         // position and the screen jittered. A fixed title keeps it still.
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarVisibility(.hidden, for: .tabBar)
         .toolbar { toolbar }
         .sheet(isPresented: $isEditingInfo) {
             ListEditor(list: list)
