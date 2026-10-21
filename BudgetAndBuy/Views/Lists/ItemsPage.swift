@@ -17,6 +17,11 @@ struct ItemsPage: View {
     @State private var collapsedAisles: Set<ProductCategory> = []
     @State private var isBasketExpanded = true
     @State private var pricing: PricingTarget?
+    /// Items just ticked, shown ticked where they are before moving to the basket.
+    @State private var ticking: Set<NSManagedObjectID> = []
+
+    /// How long a ticked item stays in place before moving to the basket.
+    private static let tickPause: Duration = .milliseconds(600)
 
     /// Everyday things to start an empty list with.
     private static let starters = ["Milk", "Bread", "Eggs", "Bananas", "Apples", "Cheese", "Butter", "Pasta", "Tea", "Coffee", "Toilet roll", "Washing-up liquid"]
@@ -94,6 +99,13 @@ struct ItemsPage: View {
         }
         .themedList()
         .contentMargins(.top, 4, for: .scrollContent)
+        #if DEBUG
+        .task {
+            guard DebugLaunch.ticksFirstItem else { return }
+            try? await Task.sleep(for: .seconds(1))
+            if let first = toBuy.first { toggle(first) }
+        }
+        #endif
         .sheet(item: $pricing) { target in
             PriceSheet(target: target)
         }
@@ -210,18 +222,38 @@ struct ItemsPage: View {
             item: item,
             store: shoppingStore,
             price: shoppingStore.flatMap { item.product?.latestPrice(at: $0) },
+            isTicking: ticking.contains(item.objectID),
             onToggle: { toggle(item) },
             onPrice: { price(item) }
         )
     }
 
-    /// Ticking an item off while shopping confirms its price here, or asks for
-    /// one if this shop has none yet.
+    /// Ticking shows the tick where the item is, then moves it to the basket a
+    /// moment later; tapping again in that moment keeps it on the list.
     private func toggle(_ item: Item) {
-        withAnimation {
-            item.setChecked(!item.isChecked)
+        let id = item.objectID
+        if item.isChecked {
+            withAnimation { item.setChecked(false) }
+            context.saveIfNeeded()
+        } else if ticking.contains(id) {
+            ticking.remove(id)
+        } else {
+            ticking.insert(id)
+            Task {
+                try? await Task.sleep(for: Self.tickPause)
+                guard ticking.remove(id) != nil, !item.isDeleted, !item.isChecked else { return }
+                putInBasket(item)
+            }
         }
-        if item.isChecked, let store = shoppingStore, let product = item.product {
+    }
+
+    /// Putting an item in the basket while shopping confirms its price here,
+    /// or asks for one if this shop has none yet.
+    private func putInBasket(_ item: Item) {
+        withAnimation {
+            item.setChecked(true)
+        }
+        if let store = shoppingStore, let product = item.product {
             if let latest = product.latestPrice(at: store) {
                 store.recordPrice(latest.amountMinor, for: product)
             } else {
@@ -288,34 +320,38 @@ private struct ItemRow: View {
     @ObservedObject var item: Item
     let store: Store?
     let price: Price?
+    /// Just ticked and about to move to the basket.
+    let isTicking: Bool
     let onToggle: () -> Void
     let onPrice: () -> Void
+
+    private var looksChecked: Bool { item.isChecked || isTicking }
 
     var body: some View {
         NavigationLink(value: item) {
             HStack(spacing: 12) {
                 Button(action: onToggle) {
                     HStack(spacing: 12) {
-                        Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
+                        Image(systemName: looksChecked ? "checkmark.circle.fill" : "circle")
                             .font(.title2)
-                            .foregroundStyle(item.isChecked ? Color.brandInk : Color.brandSoft)
+                            .foregroundStyle(looksChecked ? Color.brandInk : Color.brandSoft)
                             .contentTransition(.symbolEffect(.replace))
                         ProductIcon(product: item.product)
                             .font(.title2)
-                            .foregroundStyle(item.isChecked ? Color.inkSecondary : Color.ink)
+                            .foregroundStyle(looksChecked ? Color.inkSecondary : Color.ink)
                             .frame(width: 30)
                     }
                     .frame(minHeight: 44)
                     .contentShape(.rect)
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel(item.isChecked ? "Take \(item.displayName) out of the basket" : "Put \(item.displayName) in the basket")
-                .sensoryFeedback(.selection, trigger: item.isChecked)
+                .accessibilityLabel(looksChecked ? "Take \(item.displayName) out of the basket" : "Put \(item.displayName) in the basket")
+                .sensoryFeedback(.selection, trigger: looksChecked)
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(item.product?.name ?? "")
-                        .foregroundStyle(item.isChecked ? Color.inkSecondary : Color.ink)
-                        .strikethrough(item.isChecked, color: Color.inkSecondary)
+                        .foregroundStyle(looksChecked ? Color.inkSecondary : Color.ink)
+                        .strikethrough(looksChecked, color: Color.inkSecondary)
                     if let size = item.product?.size {
                         Text(size.formatted)
                             .font(.subheadline)
