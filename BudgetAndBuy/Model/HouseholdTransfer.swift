@@ -61,8 +61,7 @@ extension Household {
             copy.spentMinor = trip.spentMinor
             copy.itemCount = trip.itemCount
             copy.pricedCount = trip.pricedCount
-            copy.savedMinor = trip.savedMinor
-            copy.comparedStoreName = trip.comparedStoreName
+            copy.savings = trip.savings
             copy.store = trip.store.flatMap { storeCopies[$0.objectID] }
             copy.household = destination
             context.delete(trip)

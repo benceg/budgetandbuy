@@ -199,7 +199,9 @@ extension PersistenceController {
         coop.recordPrice(325, for: household.product(named: "Free-range eggs", size: ProductSize(amount: 6, unit: .pack)))
         aldi.markUnavailable(household.product(named: "Coffee beans"))
 
-        for (daysAgo, store, spent, saved) in [(2, aldi, 4_120, 980), (9, coop, 1_460, -210), (16, aldi, 5_235, 1_140)] {
+        for (daysAgo, store, spent, cheapest, average, dearest) in [
+            (2, aldi, 4_120, 120, 640, 980), (9, coop, 1_460, -310, -210, 40), (16, aldi, 5_235, 0, 760, 1_140),
+        ] {
             let trip = household.insertRelated(Trip.self)
             trip.household = household
             trip.store = store
@@ -207,8 +209,12 @@ extension PersistenceController {
             trip.listName = weekly.name
             trip.createdAt = Calendar.current.date(byAdding: .day, value: -daysAgo, to: .now)
             trip.spentMinor = Int64(spent)
-            trip.savedMinor = Int64(saved)
-            trip.comparedStoreName = store == aldi ? coop.name : aldi.name
+            var savings = Savings()
+            savings.comparedCount = 4
+            savings.cheapestMinor = Int64(cheapest)
+            savings.averageMinor = Int64(average)
+            savings.dearestMinor = Int64(dearest)
+            trip.savings = savings
         }
         let granny = controller.createHousehold(named: "Granny’s House", colorName: "orchid")
         granny.copyShops(from: household, includingPrices: true)

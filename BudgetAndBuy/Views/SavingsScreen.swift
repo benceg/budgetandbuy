@@ -1,14 +1,20 @@
 import CoreData
 import SwiftUI
 
-/// What choosing where to shop has saved, and the shops behind it.
+/// How the month's spending is going against the budget, and what shopping
+/// where you did saved, or cost extra, against your other shops' prices.
 struct SavingsScreen: View {
+    static let basisKey = "savingsBasis"
+
     @ObservedObject var household: Household
     let households: [Household]
     @Binding var selectedHouseholdID: String
     @Environment(\.managedObjectContext) private var context
     @FetchRequest private var trips: FetchedResults<Trip>
     @State private var period: TripStats.Period = .month
+    // A way of looking, so it's kept on this iPhone rather than shared.
+    @AppStorage(Self.basisKey) private var basis: Savings.Basis = .average
+    @State private var isEditingBudget = false
 
     init(household: Household, households: [Household], selectedHouseholdID: Binding<String>) {
         self.household = household
@@ -25,21 +31,28 @@ struct SavingsScreen: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+                    budget
                     if trips.isEmpty {
                         EmptyState(
                             systemImage: "banknote",
                             title: "Your savings start here",
-                            message: "Each time you finish shopping, Budget & Buy compares it with your nearest shop, or, if you shopped nearby, with the cheapest. What you save adds up here."
+                            message: "Each time you finish shopping, Budget & Buy compares what you paid with your other shops’ prices for the same things. What you save, and what convenience costs you, adds up here."
                         )
                         .card()
                     } else {
                         let stats = TripStats(trips: trips, period: period)
                         ChipPicker(options: TripStats.Period.allCases.map { ($0, $0.title) }, selection: $period)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Compare with your other shops’ prices")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.inkSecondary)
+                            ChipPicker(options: Savings.Basis.allCases.map { ($0, $0.title) }, selection: $basis)
+                        }
                         hero(stats)
                         tiles(stats)
                         if !stats.stores.isEmpty { shops(stats) }
                         recent(stats)
-                        Text("Savings count the items priced at both shops being compared.")
+                        Text("Each trip is compared with the latest prices at your other shops when it finished. Things with no price at another shop aren’t counted.")
                             .font(.footnote)
                             .foregroundStyle(Color.inkSecondary)
                             .padding(.horizontal, 4)
@@ -50,19 +63,63 @@ struct SavingsScreen: View {
             .canvasBackground()
             .navigationTitle("Savings")
             .householdSwitcher(household, households: households, selection: $selectedHouseholdID)
+            .sheet(isPresented: $isEditingBudget) {
+                BudgetSheet(target: .month(household))
+            }
         }
     }
 
+    /// This month against the budget, whichever period is showing below.
+    private var budget: some View {
+        let spent = TripStats(trips: trips, period: .month).spentMinor
+        let progress = BudgetProgress(spentMinor: spent, budgetMinor: household.monthlyBudgetMinor)
+        return VStack(alignment: .leading, spacing: 12) {
+            Text("Spent in \(Date.now.formatted(.dateTime.month(.wide)))")
+                .font(.subheadline)
+                .foregroundStyle(Color.inkSecondary)
+            HStack(alignment: .firstTextBaseline) {
+                HeroAmount(minorUnits: spent)
+                if household.monthlyBudgetMinor > 0 {
+                    Text("of \(Money.format(household.monthlyBudgetMinor))")
+                        .font(.headline)
+                        .foregroundStyle(Color.inkSecondary)
+                }
+            }
+            if household.monthlyBudgetMinor > 0 {
+                ProgressBar(fraction: progress.fraction, color: progress.isOver ? .apricot : .brand)
+                HStack {
+                    Text(progress.isOver
+                         ? String(localized: "\(Money.format(-progress.remainingMinor)) over budget")
+                         : String(localized: "\(Money.format(progress.remainingMinor)) under budget"))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(progress.isOver ? Color.apricot : Color.brandInk)
+                    Spacer()
+                    Button("Change") { isEditingBudget = true }
+                        .font(.subheadline)
+                }
+            } else {
+                Button("Set a Monthly Budget") { isEditingBudget = true }
+                    .buttonStyle(.secondary)
+            }
+        }
+        .card(padding: 18)
+    }
+
     private func hero(_ stats: TripStats) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Saved by shopping around")
+        let amount = stats.savings[basis]
+        return VStack(alignment: .leading, spacing: 4) {
+            Text(basis.headline(for: amount))
                 .font(.subheadline)
                 .foregroundStyle(Color.onBrand.opacity(0.8))
-            Text(Money.format(stats.savedMinor))
+            Text(Money.format(abs(amount)))
                 .font(.system(size: 44, weight: .bold))
                 .monospacedDigit()
                 .contentTransition(.numericText())
                 .foregroundStyle(Color.onBrand)
+            Text(basis.detail(count: stats.savings.comparedCount))
+                .font(.subheadline)
+                .foregroundStyle(Color.onBrand.opacity(0.8))
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -73,7 +130,7 @@ struct SavingsScreen: View {
     private func tiles(_ stats: TripStats) -> some View {
         HStack(spacing: 12) {
             SummaryTile(title: "Spent", value: Money.format(stats.spentMinor), systemImage: "basket")
-            SummaryTile(title: stats.trips.count == 1 ? "Trip" : "Trips", value: stats.trips.count.formatted(), systemImage: "car")
+            SummaryTile(title: stats.trips.count == 1 ? "Trip" : "Trips", value: stats.trips.count.formatted(), systemImage: "storefront")
         }
     }
 
@@ -95,11 +152,7 @@ struct SavingsScreen: View {
                         VStack(alignment: .trailing, spacing: 2) {
                             Text(Money.format(summary.spentMinor))
                                 .monospacedDigit()
-                            if summary.savedMinor > 0 {
-                                Text("saved \(Money.format(summary.savedMinor))")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(Color.leaf)
-                            }
+                            SavingText(savings: summary.savings, basis: basis)
                         }
                     }
                     .foregroundStyle(Color.ink)
@@ -115,7 +168,7 @@ struct SavingsScreen: View {
             SectionHeading(title: "Recent trips")
             VStack(spacing: 0) {
                 ForEach(stats.trips.prefix(20), id: \.objectID) { trip in
-                    TripRow(trip: trip, colorName: colorName(of: trip.storeName ?? ""))
+                    TripRow(trip: trip, basis: basis, colorName: colorName(of: trip.storeName ?? ""))
                         .contextMenu {
                             Button("Delete", systemImage: "trash", role: .destructive) {
                                 context.delete(trip)
@@ -141,8 +194,56 @@ struct SavingsScreen: View {
     }
 }
 
+extension Savings.Basis {
+    /// What an amount saved, or paid extra, is called.
+    func headline(for amountMinor: Int64) -> String {
+        switch (self, amountMinor.signum()) {
+        case (.cheapest, -1): String(localized: "Paid extra for convenience")
+        case (.dearest, 1): String(localized: "Saved by shopping cheaper")
+        case (_, 1): String(localized: "Saved by shopping around")
+        case (_, -1): String(localized: "Paid extra")
+        default: String(localized: "No difference")
+        }
+    }
+
+    /// "vs cheapest", in the trip summary.
+    var comparisonTitle: LocalizedStringResource {
+        switch self {
+        case .cheapest: "vs cheapest"
+        case .average: "vs average"
+        case .dearest: "vs dearest"
+        }
+    }
+
+    /// What it was compared with.
+    func detail(count: Int) -> String {
+        let things = count == 1 ? String(localized: "1 thing") : String(localized: "\(count) things")
+        return switch self {
+        case .cheapest: String(localized: "Compared with your other shops’ cheapest prices, on \(things).")
+        case .average: String(localized: "Compared with your other shops’ average prices, on \(things).")
+        case .dearest: String(localized: "Compared with your other shops’ dearest prices, on \(things).")
+        }
+    }
+}
+
+/// "saved £1.20" or "£0.40 extra", or nothing when there was nothing to compare.
+private struct SavingText: View {
+    let savings: Savings
+    let basis: Savings.Basis
+
+    var body: some View {
+        let amount = savings[basis]
+        if savings.comparedCount > 0, amount != 0 {
+            Text(amount > 0 ? "saved \(Money.format(amount))" : "\(Money.format(-amount)) extra")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(amount > 0 ? Color.leaf : Color.apricot)
+        }
+    }
+}
+
 private struct TripRow: View {
     @ObservedObject var trip: Trip
+    let basis: Savings.Basis
     let colorName: String?
 
     var body: some View {
@@ -163,11 +264,7 @@ private struct TripRow: View {
                 Text(Money.format(trip.spentMinor))
                     .monospacedDigit()
                     .foregroundStyle(Color.ink)
-                if trip.savedMinor > 0 {
-                    Text("saved \(Money.format(trip.savedMinor))")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.leaf)
-                }
+                SavingText(savings: trip.savings, basis: basis)
             }
         }
         .padding(.vertical, 10)

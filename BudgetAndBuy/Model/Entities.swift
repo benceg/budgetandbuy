@@ -137,9 +137,14 @@ final class Trip: NSManagedObject, Timestamped {
     @NSManaged var spentMinor: Int64
     @NSManaged var itemCount: Int16
     @NSManaged var pricedCount: Int16
-    /// Positive when this trip cost less than shopping at `comparedStoreName`.
-    @NSManaged var savedMinor: Int64
-    @NSManaged var comparedStoreName: String?
+    /// Items bought that had prices at other shops too, which the savings cover.
+    @NSManaged var comparedCount: Int16
+    /// What the compared items would have cost at your other shops, less what
+    /// they cost here: positive when this trip was cheaper. Worked out from
+    /// the prices known when the trip finished.
+    @NSManaged var savedVsCheapestMinor: Int64
+    @NSManaged var savedVsAverageMinor: Int64
+    @NSManaged var savedVsDearestMinor: Int64
     @NSManaged var household: Household?
     @NSManaged var store: Store?
 

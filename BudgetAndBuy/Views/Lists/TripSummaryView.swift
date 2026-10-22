@@ -1,7 +1,8 @@
 import CoreData
 import SwiftUI
 
-/// Shown after finishing a shop: what it cost and what choosing that shop saved.
+/// Shown after finishing a shop: what it cost, and what it saved or cost
+/// extra against your other shops' cheapest, average and dearest prices.
 struct TripSummaryView: View {
     @ObservedObject var trip: Trip
     @Environment(\.dismiss) private var dismiss
@@ -36,17 +37,10 @@ struct TripSummaryView: View {
                             systemImage: "basket",
                             tint: .brandInk
                         )
-                        if let compared = trip.comparedStoreName, trip.savedMinor != 0 {
-                            figure(
-                                title: trip.savedMinor > 0 ? "Saved" : "Paid extra",
-                                value: Money.format(abs(trip.savedMinor)),
-                                detail: String(localized: "Compared with \(compared)"),
-                                systemImage: "sterlingsign",
-                                tint: trip.savedMinor > 0 ? .leaf : .apricot
-                            )
-                        }
                     }
                     .card()
+
+                    comparisons
 
                     Text("Prices you confirmed are saved for next time. Your savings add up in the Savings tab.")
                         .font(.footnote)
@@ -63,6 +57,43 @@ struct TripSummaryView: View {
             }
         }
         .presentationDetents([.large])
+    }
+
+    @ViewBuilder
+    private var comparisons: some View {
+        let savings = trip.savings
+        if savings.comparedCount > 0 {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(savings.comparedCount == 1
+                     ? String(localized: "On the 1 thing with prices at your other shops")
+                     : String(localized: "On the \(savings.comparedCount) things with prices at your other shops"))
+                    .font(.subheadline)
+                    .foregroundStyle(Color.inkSecondary)
+                ForEach(Savings.Basis.allCases) { basis in
+                    let amount = savings[basis]
+                    HStack {
+                        Text(basis.comparisonTitle)
+                            .foregroundStyle(Color.ink)
+                        Spacer()
+                        Text(amount > 0 ? String(localized: "Saved \(Money.format(amount))")
+                             : amount < 0 ? String(localized: "Paid \(Money.format(-amount)) extra")
+                             : String(localized: "Same"))
+                            .font(.body.weight(.semibold))
+                            .monospacedDigit()
+                            .foregroundStyle(amount > 0 ? Color.leaf : amount < 0 ? Color.apricot : Color.inkSecondary)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .card()
+        } else {
+            Text("Nothing in this shop has a price at your other shops yet, so there’s nothing to compare it with.")
+                .font(.subheadline)
+                .foregroundStyle(Color.inkSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .card()
+        }
     }
 
     private func figure(title: LocalizedStringResource, value: String, detail: String?, systemImage: String, tint: Color) -> some View {
