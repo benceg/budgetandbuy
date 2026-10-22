@@ -1,16 +1,7 @@
 import CoreData
 import SwiftUI
 
-enum CarbonFormat {
-    static func format(_ kg: Double) -> String {
-        Measurement(value: kg, unit: UnitMass.kilograms).formatted(
-            .measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: .number.precision(.fractionLength(0...1)))
-        )
-    }
-}
-
-/// What choosing where to shop has saved, in money and in carbon, and the
-/// shops behind it.
+/// What choosing where to shop has saved, and the shops behind it.
 struct SavingsScreen: View {
     @ObservedObject var household: Household
     let households: [Household]
@@ -36,9 +27,9 @@ struct SavingsScreen: View {
                 VStack(alignment: .leading, spacing: 16) {
                     if trips.isEmpty {
                         EmptyState(
-                            systemImage: "leaf",
+                            systemImage: "banknote",
                             title: "Your savings start here",
-                            message: "Each time you finish shopping, Budget & Buy compares it with your nearest shop, or, if you shopped nearby, with the cheapest. Money saved and carbon avoided add up here."
+                            message: "Each time you finish shopping, Budget & Buy compares it with your nearest shop, or, if you shopped nearby, with the cheapest. What you save adds up here."
                         )
                         .card()
                     } else {
@@ -48,7 +39,7 @@ struct SavingsScreen: View {
                         tiles(stats)
                         if !stats.stores.isEmpty { shops(stats) }
                         recent(stats)
-                        Text("Savings count the items priced at both shops being compared. Carbon is estimated for a round trip from the distances of your shops: about 0.17 kg CO₂e per km by car and 0.1 by bus.")
+                        Text("Savings count the items priced at both shops being compared.")
                             .font(.footnote)
                             .foregroundStyle(Color.inkSecondary)
                             .padding(.horizontal, 4)
@@ -63,46 +54,20 @@ struct SavingsScreen: View {
     }
 
     private func hero(_ stats: TripStats) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Saved by shopping around")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.onBrand.opacity(0.8))
-                Text(Money.format(stats.savedMinor))
-                    .font(.system(size: 44, weight: .bold))
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                    .foregroundStyle(Color.onBrand)
-            }
-            Divider().overlay(Color.onBrand.opacity(0.25))
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "leaf")
-                    .font(.title3)
-                    .foregroundStyle(Color.brand)
-                    .frame(width: 40, height: 40)
-                    .background(Color.brandPale, in: .circle)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(CarbonFormat.format(stats.carbonAvoidedKg)) CO₂e avoided")
-                        .font(.headline)
-                        .foregroundStyle(Color.onBrand)
-                    Text(carbonDetail(stats.carbonAvoidedKg))
-                        .font(.subheadline)
-                        .foregroundStyle(Color.onBrand.opacity(0.8))
-                }
-            }
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Saved by shopping around")
+                .font(.subheadline)
+                .foregroundStyle(Color.onBrand.opacity(0.8))
+            Text(Money.format(stats.savedMinor))
+                .font(.system(size: 44, weight: .bold))
+                .monospacedDigit()
+                .contentTransition(.numericText())
+                .foregroundStyle(Color.onBrand)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.brand, in: .rect(cornerRadius: 24, style: .continuous))
         .accessibilityElement(children: .combine)
-    }
-
-    private func carbonDetail(_ kg: Double) -> String {
-        let kilometres = kg / TravelMode.drive.carbonKgPerKm
-        guard kilometres >= 1 else { return String(localized: "by shopping closer to home") }
-        let distance = Measurement(value: kilometres, unit: UnitLength.kilometers)
-            .formatted(.measurement(width: .wide, usage: .road, numberFormatStyle: .number.precision(.fractionLength(0))))
-        return String(localized: "About \(distance) less driving, by shopping closer to home")
     }
 
     private func tiles(_ stats: TripStats) -> some View {
@@ -200,10 +165,6 @@ private struct TripRow: View {
                     .foregroundStyle(Color.ink)
                 if trip.savedMinor > 0 {
                     Text("saved \(Money.format(trip.savedMinor))")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.leaf)
-                } else if trip.carbonSavedKg >= 0.05 {
-                    Text("\(CarbonFormat.format(trip.carbonSavedKg)) CO₂e avoided")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.leaf)
                 }

@@ -33,7 +33,7 @@ struct TripTests {
         list.addItem(named: "Eggs")
     }
 
-    @Test func shoppingFurtherAwaySavesMoneyAndCostsCarbon() throws {
+    @Test func shoppingFurtherAwayIsComparedWithTheNearest() throws {
         let trip = try #require(list.finishShopping(at: aldi, stores: [aldi, coop]))
         #expect(trip.storeName == "Aldi")
         #expect(trip.listName == "Weekly")
@@ -42,18 +42,14 @@ struct TripTests {
         #expect(trip.itemCount == 3)
         #expect(trip.comparedStoreName == "Co-op")
         #expect(trip.savedMinor == (175 + 250) - (145 + 129))
-        #expect(abs(trip.carbonKg - 10 * 2 * 0.17) < 0.001)
-        #expect(abs(trip.carbonSavedKg + 10 * 2 * 0.17) < 0.001)
         #expect(trip.household == household)
     }
 
-    @Test func shoppingLocallyAvoidsCarbonAndCostsMoney() throws {
+    @Test func shoppingLocallyIsComparedWithTheCheapest() throws {
         let trip = try #require(list.finishShopping(at: coop, stores: [aldi, coop]))
         #expect(trip.spentMinor == 175 + 250)
         #expect(trip.comparedStoreName == "Aldi")
         #expect(trip.savedMinor == -((175 + 250) - (145 + 129)))
-        #expect(trip.carbonKg == 0)
-        #expect(abs(trip.carbonSavedKg - 10 * 2 * 0.17) < 0.001)
     }
 
     @Test func finishingClearsOnlyTheBasket() throws {
@@ -67,7 +63,7 @@ struct TripTests {
         #expect(list.finishShopping(at: aldi, stores: [aldi, coop]) == nil)
     }
 
-    @Test func statsAddUpSavingsAndCarbonWithinThePeriod() throws {
+    @Test func statsAddUpSavingsWithinThePeriod() throws {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let far = try #require(list.finishShopping(at: aldi, stores: [aldi, coop]))
         far.createdAt = now
@@ -80,13 +76,11 @@ struct TripTests {
         let allTime = TripStats(trips: [far, local], period: .allTime, now: now)
         #expect(allTime.trips == [far, local])
         #expect(allTime.savedMinor == far.savedMinor)
-        #expect(abs(allTime.carbonAvoidedKg - local.carbonSavedKg) < 0.001)
         #expect(allTime.spentMinor == far.spentMinor + local.spentMinor)
         #expect(allTime.stores.map(\.name) == ["Aldi", "Co-op"])
 
         let thisYear = TripStats(trips: [far, local], period: .year, now: now)
         #expect(thisYear.trips == [far])
-        #expect(thisYear.carbonAvoidedKg == 0)
     }
 
     @Test func movingContentsCopiesTrips() throws {

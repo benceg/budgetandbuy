@@ -36,25 +36,14 @@ struct TripSummaryView: View {
                             systemImage: "basket",
                             tint: .brandInk
                         )
-                        if let compared = trip.comparedStoreName {
-                            if trip.savedMinor != 0 {
-                                figure(
-                                    title: trip.savedMinor > 0 ? "Saved" : "Paid extra",
-                                    value: Money.format(abs(trip.savedMinor)),
-                                    detail: String(localized: "Compared with \(compared)"),
-                                    systemImage: "sterlingsign",
-                                    tint: trip.savedMinor > 0 ? .leaf : .apricot
-                                )
-                            }
-                            if abs(trip.carbonSavedKg) >= 0.05 {
-                                figure(
-                                    title: trip.carbonSavedKg > 0 ? "CO₂e avoided" : "Extra CO₂e",
-                                    value: CarbonFormat.format(abs(trip.carbonSavedKg)),
-                                    detail: String(localized: "Compared with \(compared)"),
-                                    systemImage: "leaf",
-                                    tint: trip.carbonSavedKg > 0 ? .leaf : .apricot
-                                )
-                            }
+                        if let compared = trip.comparedStoreName, trip.savedMinor != 0 {
+                            figure(
+                                title: trip.savedMinor > 0 ? "Saved" : "Paid extra",
+                                value: Money.format(abs(trip.savedMinor)),
+                                detail: String(localized: "Compared with \(compared)"),
+                                systemImage: "sterlingsign",
+                                tint: trip.savedMinor > 0 ? .leaf : .apricot
+                            )
                         }
                     }
                     .card()

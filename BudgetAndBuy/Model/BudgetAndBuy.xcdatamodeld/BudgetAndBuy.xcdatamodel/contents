@@ -71,8 +71,6 @@
         <relationship name="trips" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Trip" inverseName="store" inverseEntity="Trip"/>
     </entity>
     <entity name="Trip" representedClassName="Trip" syncable="YES">
-        <attribute name="carbonKg" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
-        <attribute name="carbonSavedKg" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
         <attribute name="comparedStoreName" optional="YES" attributeType="String"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="itemCount" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
@@ -81,7 +79,6 @@
         <attribute name="savedMinor" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="spentMinor" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="storeName" optional="YES" attributeType="String"/>
-        <attribute name="travelMode" optional="YES" attributeType="String"/>
         <attribute name="uuid" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <relationship name="household" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Household" inverseName="trips" inverseEntity="Household"/>
         <relationship name="store" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Store" inverseName="trips" inverseEntity="Store"/>

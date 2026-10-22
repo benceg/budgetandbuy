@@ -138,7 +138,7 @@ private struct WelcomeStep: View {
             VStack(alignment: .leading, spacing: 20) {
                 Feature(systemImage: "person.2", title: "One list for the household", message: "Everyone adds to it, and sees what’s already in the basket.")
                 Feature(systemImage: "sterlingsign", title: "Know where it’s cheapest", message: "Prices you see as you shop build up, so you can tell when a longer trip is worth it.")
-                Feature(systemImage: "leaf", title: "Greener choices", message: "See the carbon you save by shopping closer to home.")
+                Feature(systemImage: "banknote", title: "Stay on budget", message: "Set a budget for the month and see what shopping around has saved you.")
             }
             Text("No accounts, no adverts. Your lists and prices stay in your iCloud.")
                 .font(.footnote)

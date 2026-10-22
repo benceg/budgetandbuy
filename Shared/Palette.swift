@@ -87,7 +87,7 @@ extension Color {
     /// A lighter tint, for idle ticks, tracks and disabled buttons.
     static let brandSoft = Color(themed: { $0.soft })
     static let brandPale = Color(themed: { $0.pale })
-    /// Money saved and carbon avoided.
+    /// Money saved.
     static let leaf = Color(light: 0x2C7A4B, dark: 0x7CC196)
     /// Over budget, extra cost, things to look at.
     static let apricot = Color(light: 0xE0773B, dark: 0xF0803F)

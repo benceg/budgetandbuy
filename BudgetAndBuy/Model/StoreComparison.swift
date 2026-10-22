@@ -136,14 +136,6 @@ struct StoreComparison {
             .max { $0.1.amountMinor < $1.1.amountMinor }
     }
 
-    /// Extra carbon for a round trip to this store instead of the nearest one,
-    /// or nil when a distance is missing.
-    func extraCarbonKg(at store: Store) -> Double? {
-        guard let nearest, store != nearest,
-              let theirs = store.roundTripCarbonKg, let ours = nearest.roundTripCarbonKg else { return nil }
-        return theirs - ours
-    }
-
     private static func bestSplit(
         items: [Item],
         stores: [Store],
@@ -185,27 +177,5 @@ struct StoreComparison {
         let savesEnough = best.pricedCount == bestSingle.pricedCount
             && best.totalMinor + minimumSplitSavingMinor <= bestSingle.totalMinor
         return coversMore || savesEnough ? best : nil
-    }
-}
-
-extension TravelMode {
-    /// Approximate kg CO₂e per km, after the UK government's greenhouse gas
-    /// conversion factors (average car; average local bus per passenger).
-    var carbonKgPerKm: Double {
-        switch self {
-        case .walk, .cycle: 0
-        case .drive: 0.17
-        case .transit: 0.10
-        }
-    }
-}
-
-extension Store {
-    /// Nil when the trip emits carbon but its distance hasn't been entered.
-    var roundTripCarbonKg: Double? {
-        let factor = travel.carbonKgPerKm
-        if factor == 0 { return 0 }
-        guard distanceKm > 0 else { return nil }
-        return distanceKm * 2 * factor
     }
 }

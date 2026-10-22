@@ -134,16 +134,12 @@ final class Trip: NSManagedObject, Timestamped {
     @NSManaged var createdAt: Date?
     @NSManaged var storeName: String?
     @NSManaged var listName: String?
-    @NSManaged var travelMode: String?
     @NSManaged var spentMinor: Int64
     @NSManaged var itemCount: Int16
     @NSManaged var pricedCount: Int16
     /// Positive when this trip cost less than shopping at `comparedStoreName`.
     @NSManaged var savedMinor: Int64
     @NSManaged var comparedStoreName: String?
-    @NSManaged var carbonKg: Double
-    /// Positive when this trip emitted less than going to `comparedStoreName`.
-    @NSManaged var carbonSavedKg: Double
     @NSManaged var household: Household?
     @NSManaged var store: Store?
 

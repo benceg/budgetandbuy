@@ -94,7 +94,7 @@ struct StoreEditor: View {
                 } header: {
                     Text("Getting There")
                 } footer: {
-                    Text("From home, one way. Used to weigh up savings against the trip, and to work out the carbon you save by shopping closer to home.")
+                    Text("From home, one way. Used to weigh up savings against the trip.")
                 }
                 .onSurface()
 

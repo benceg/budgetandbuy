@@ -97,13 +97,4 @@ struct StoreComparisonTests {
         #expect(comparison.saving(at: aldi)?.amountMinor == -30)
         #expect(comparison.bestSaving == nil)
     }
-
-    @Test func countsExtraCarbonForDrivingFurther() throws {
-        let comparison = StoreComparison(items: [], stores: [aldi, coop])
-        let extra = try #require(comparison.extraCarbonKg(at: aldi))
-        #expect(abs(extra - 14 * 2 * 0.17) < 0.001)
-
-        aldi.distanceKm = 0
-        #expect(StoreComparison(items: [], stores: [aldi, coop]).extraCarbonKg(at: aldi) == nil)
-    }
 }

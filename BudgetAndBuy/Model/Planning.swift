@@ -35,14 +35,6 @@ struct ShoppingPlan {
     /// One-way journey time to every stop, added up.
     var travelMinutes: Int { stops.reduce(0) { $0 + Int($1.store.travelMinutes) } }
 
-    /// Round trips to every stop, or nil when a distance is missing.
-    var carbonKg: Double? {
-        stops.reduce(Optional(0.0)) { total, stop in
-            guard let total, let trip = stop.store.roundTripCarbonKg else { return nil }
-            return total + trip
-        }
-    }
-
     /// The plan for a goal, or nil when no store has a price for anything.
     init?(goal: Goal, comparison: StoreComparison) {
         var stops: [Stop] = []

@@ -38,7 +38,6 @@ struct PlanningTests {
         #expect(plan.totalMinor == 120 + 600 + 145)
         #expect(plan.pricedCount == 3)
         #expect(plan.travelMinutes == 24)
-        #expect(plan.carbonKg == 10 * 2 * 0.17)
     }
 
     @Test func oneStopUsesTheStoreThatCoversMost() throws {
@@ -54,7 +53,6 @@ struct PlanningTests {
         let comparison = StoreComparison(items: Array(list.items ?? []), stores: [far, near])
         let plan = try #require(ShoppingPlan(goal: .closest, comparison: comparison))
         #expect(plan.stops.map(\.store) == [near])
-        #expect(plan.carbonKg == 0)
     }
 
     @Test func noPlanWithoutPrices() {

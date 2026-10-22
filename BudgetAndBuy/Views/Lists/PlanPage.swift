@@ -3,7 +3,7 @@ import MapKit
 import SwiftUI
 
 /// Where to buy the list: the cheapest way, the one-stop way and the closest
-/// way, with what each costs in money, time and carbon.
+/// way, with what each costs in money and time.
 struct PlanPage: View {
     @ObservedObject var list: ShoppingList
     let items: [Item]
@@ -165,16 +165,12 @@ private struct PlanSummary: View {
     }
 
     private var details: String {
-        var parts = [
+        [
             plan.pricedCount == plan.itemCount
                 ? String(localized: "All \(plan.itemCount) items")
                 : String(localized: "\(plan.pricedCount) of \(plan.itemCount) items priced"),
             String(localized: "\(plan.travelMinutes) min travel"),
-        ]
-        if let carbon = plan.carbonKg {
-            parts.append(String(localized: "\(CarbonFormat.format(carbon)) CO₂e"))
-        }
-        return parts.joined(separator: " · ")
+        ].joined(separator: " · ")
     }
 }
 

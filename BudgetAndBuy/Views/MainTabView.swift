@@ -37,7 +37,7 @@ struct MainTabView: View {
                     SavingsScreen(household: current, households: households, selectedHouseholdID: $selectedHouseholdID)
                         .id(current.objectID)
                 } label: {
-                    tabLabel("Savings", symbol: "leaf", for: .savings)
+                    tabLabel("Savings", symbol: "banknote", for: .savings)
                 }
                 Tab(value: AppTab.settings) {
                     SettingsScreen(household: current)

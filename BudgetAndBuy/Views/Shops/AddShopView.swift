@@ -279,7 +279,7 @@ struct ShopSetupView: View {
             }
             Text(isEstimated
                  ? "Worked out from where you are now. Adjust it if you usually set off from somewhere else."
-                 : "One way, from home. It’s weighed against what a shop saves you, and used to estimate the carbon of the trip.")
+                 : "One way, from home. It’s weighed against what a shop saves you.")
                 .font(.footnote)
                 .foregroundStyle(Color.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
