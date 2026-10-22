@@ -74,10 +74,7 @@ struct PlanPage: View {
             ForEach(Array(plan.stops.enumerated()), id: \.element.id) { index, stop in
                 StopCard(number: plan.stops.count > 1 ? index + 1 : nil, stop: stop)
             }
-            let located = plan.stops.filter { $0.store.coordinate != nil }
-            if !located.isEmpty {
-                RouteMap(stops: located)
-            }
+            RouteMap(stops: plan.stops, stores: stores)
             if let first = plan.stops.first {
                 Button {
                     onStartShopping(first.store)
@@ -204,6 +201,12 @@ private struct StopCard: View {
                         Text(stop.store.name ?? "")
                             .font(.headline)
                             .foregroundStyle(Color.ink)
+                        if let address = stop.store.address {
+                            Text(address)
+                                .font(.subheadline)
+                                .foregroundStyle(Color.inkSecondary)
+                                .lineLimit(1)
+                        }
                         Text("\(Image(systemName: stop.store.travel.symbolName)) \(stop.store.journey)")
                             .font(.subheadline)
                             .foregroundStyle(Color.inkSecondary)
@@ -258,17 +261,20 @@ private struct StopCard: View {
 
 private struct RouteMap: View {
     let stops: [ShoppingPlan.Stop]
+    /// All the household's shops, to tell when a name needs its address.
+    let stores: [Store]
     @State private var position: MapCameraPosition
 
-    init(stops: [ShoppingPlan.Stop]) {
+    init(stops: [ShoppingPlan.Stop], stores: [Store]) {
         self.stops = stops
+        self.stores = stores
         _position = State(initialValue: Self.framing(stops))
     }
 
     /// The plan's shops with room around them. Never closer than about
     /// 1.5 km across, so a single shop shows its neighbourhood.
     static func framing(_ stops: [ShoppingPlan.Stop]) -> MapCameraPosition {
-        let coordinates = stops.compactMap(\.store.coordinate)
+        let coordinates = stops.map(\.store.coordinate)
         guard let first = coordinates.first else { return .automatic }
         let latitudes = coordinates.map(\.latitude), longitudes = coordinates.map(\.longitude)
         let center = CLLocationCoordinate2D(
@@ -289,10 +295,8 @@ private struct RouteMap: View {
             Map(position: $position, interactionModes: [.pan, .zoom]) {
                 UserAnnotation()
                 ForEach(stops) { stop in
-                    if let coordinate = stop.store.coordinate {
-                        Marker(stop.store.name ?? "", monogram: Text(String((stop.store.name ?? "").prefix(1))), coordinate: coordinate)
-                            .tint(stop.store.color)
-                    }
+                    Marker(label(for: stop.store), monogram: Text(String((stop.store.name ?? "").prefix(1))), coordinate: stop.store.coordinate)
+                        .tint(stop.store.color)
                 }
             }
             .frame(height: 180)
@@ -316,9 +320,16 @@ private struct RouteMap: View {
         .clipShape(.rect(cornerRadius: 22, style: .continuous))
     }
 
+    /// The shop's name, with its address when another shop shares the name.
+    private func label(for store: Store) -> String {
+        let name = store.name ?? ""
+        guard store.sharesName(with: stores), let address = store.address else { return name }
+        return "\(name), \(address)"
+    }
+
     private func openInMaps() {
-        guard let stop = stops.first, let coordinate = stop.store.coordinate else { return }
-        let item = MKMapItem(location: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude), address: nil)
+        guard let stop = stops.first else { return }
+        let item = MKMapItem(location: stop.store.location, address: nil)
         item.name = stop.store.name
         let mode: String = switch stop.store.travel {
         case .walk: MKLaunchOptionsDirectionsModeWalking

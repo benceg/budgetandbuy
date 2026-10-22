@@ -257,21 +257,19 @@ struct ShoppingListTests {
         #expect(milk.latestPrice(at: moved)?.amountMinor == 145)
     }
 
-    @Test func storesRememberAndForgetTheirLocation() throws {
-        let store = household.addStore()
-        #expect(store.coordinate == nil)
-
-        store.coordinate = CLLocationCoordinate2D(latitude: 51.4826, longitude: -0.0077)
-        let coordinate = try #require(store.coordinate)
-        #expect(coordinate.latitude == 51.4826)
-        #expect(coordinate.longitude == -0.0077)
+    @Test func movingContentsKeepsWhereStoresAre() throws {
+        let place = ShopPlace(name: "Tesco", address: "200 Brighton Road, Coulsdon", fullAddress: "200 Brighton Road, Coulsdon, CR5 2PL",
+                              placeID: "I1234", latitude: 51.4826, longitude: -0.0077)
+        household.addStore(named: "Tesco", at: place)
 
         let joined = Household.create(in: context)
         household.moveContents(to: joined)
-        #expect(joined.stores?.first?.coordinate?.latitude == 51.4826)
-
-        store.coordinate = nil
-        #expect(!store.hasLocation)
+        let moved = try #require(joined.stores?.first)
+        #expect(moved.coordinate.latitude == 51.4826)
+        #expect(moved.coordinate.longitude == -0.0077)
+        #expect(moved.address == "200 Brighton Road, Coulsdon")
+        #expect(moved.fullAddress == "200 Brighton Road, Coulsdon, CR5 2PL")
+        #expect(moved.placeID == "I1234")
     }
 
     @Test(arguments: ProductCategory.allCases)

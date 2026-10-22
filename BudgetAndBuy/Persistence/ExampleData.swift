@@ -14,18 +14,19 @@ enum ExampleData {
         let kilometres: Double
         /// Roughly where it is; refined from Maps when seeding.
         let coordinate: CLLocationCoordinate2D
+        let area: String
         /// How its prices compare with the average.
         let priceLevel: Double
     }
 
     static let aldi = Shop(name: "Aldi Coulsdon", colorName: "slate", travel: .drive, minutes: 6, kilometres: 2.2,
-                           coordinate: CLLocationCoordinate2D(latitude: 51.3265, longitude: -0.1368), priceLevel: 0.82)
+                           coordinate: CLLocationCoordinate2D(latitude: 51.3265, longitude: -0.1368), area: "Coulsdon", priceLevel: 0.82)
     static let sainsburys = Shop(name: "Sainsbury’s Warlingham", colorName: "apricot", travel: .drive, minutes: 15, kilometres: 6.8,
-                                 coordinate: CLLocationCoordinate2D(latitude: 51.3177, longitude: -0.0640), priceLevel: 1.0)
+                                 coordinate: CLLocationCoordinate2D(latitude: 51.3177, longitude: -0.0640), area: "Warlingham", priceLevel: 1.0)
     static let tesco = Shop(name: "Tesco Express Coulsdon", colorName: "coral", travel: .walk, minutes: 5, kilometres: 0.4,
-                            coordinate: CLLocationCoordinate2D(latitude: 51.3196, longitude: -0.1392), priceLevel: 1.14)
+                            coordinate: CLLocationCoordinate2D(latitude: 51.3196, longitude: -0.1392), area: "Coulsdon", priceLevel: 1.14)
     static let waitrose = Shop(name: "Waitrose Coulsdon", colorName: "olive", travel: .walk, minutes: 8, kilometres: 0.6,
-                               coordinate: CLLocationCoordinate2D(latitude: 51.3188, longitude: -0.1381), priceLevel: 1.27)
+                               coordinate: CLLocationCoordinate2D(latitude: 51.3188, longitude: -0.1381), area: "Coulsdon", priceLevel: 1.27)
 
     static let shops = [aldi, sainsburys, tesco, waitrose]
 
@@ -104,7 +105,10 @@ enum ExampleData {
             store.travel = shop.travel
             store.travelMinutes = shop.minutes
             store.distanceKm = shop.kilometres
-            if store.coordinate == nil { store.coordinate = shop.coordinate }
+            if store.fullAddress == nil {
+                store.place = ShopPlace(name: shop.name, address: shop.area, fullAddress: shop.area, placeID: nil,
+                                        latitude: shop.coordinate.latitude, longitude: shop.coordinate.longitude)
+            }
             stores[shop.name] = store
         }
 
@@ -174,7 +178,8 @@ enum ExampleData {
         return Int64(rounded % 10 == 0 ? rounded - 1 : rounded)
     }
 
-    /// Moves each shop to where Maps says it is, if Maps finds it close by.
+    /// Moves each shop to where Maps says it is, with its address, if Maps
+    /// finds it close by.
     @MainActor
     private static func placeOnMap(_ stores: [String: Store]) async {
         for shop in shops {
@@ -189,7 +194,7 @@ enum ExampleData {
             // The shop may have been erased while Maps was searching.
             guard !store.isDeleted, let context = store.managedObjectContext,
                   (try? context.existingObject(with: store.objectID)) != nil else { continue }
-            store.coordinate = match.location.coordinate
+            store.place = ShopPlace(match)
         }
         stores.values.first?.managedObjectContext?.saveIfNeeded()
     }

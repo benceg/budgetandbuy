@@ -40,9 +40,7 @@ extension Household {
             copy.travelMode = store.travelMode
             copy.travelMinutes = store.travelMinutes
             copy.distanceKm = store.distanceKm
-            copy.hasLocation = store.hasLocation
-            copy.latitude = store.latitude
-            copy.longitude = store.longitude
+            copy.place = store.place
             for price in store.prices ?? [] {
                 guard let product = price.product.flatMap({ copies[$0.objectID] }) else { continue }
                 let priceCopy = copy.insertRelated(Price.self)
@@ -92,9 +90,7 @@ extension Household {
             copy.travelMode = store.travelMode
             copy.travelMinutes = store.travelMinutes
             copy.distanceKm = store.distanceKm
-            copy.hasLocation = store.hasLocation
-            copy.latitude = store.latitude
-            copy.longitude = store.longitude
+            copy.place = store.place
             guard includingPrices else { continue }
             for price in (store.prices ?? []).sorted(by: Price.isOlder) {
                 guard let original = price.product else { continue }

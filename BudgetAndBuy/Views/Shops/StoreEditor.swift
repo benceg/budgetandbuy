@@ -2,7 +2,8 @@ import CoreData
 import MapKit
 import SwiftUI
 
-/// Edits a shop's name, colour, location and how you get there.
+/// Edits a shop's name, colour, location and how you get there. Any shop can
+/// be renamed: two can share a name, told apart by their addresses.
 struct StoreEditor: View {
     private let store: Store
     private let onDelete: () -> Void
@@ -14,7 +15,7 @@ struct StoreEditor: View {
     @State private var travel: TravelMode
     @State private var minutes: Int
     @State private var distanceText: String
-    @State private var coordinate: CLLocationCoordinate2D?
+    @State private var place: ShopPlace
     @State private var isPickingLocation = false
     @AppStorage(StoreArrivalMonitor.enabledKey) private var noticesArrivals = false
     @State private var isConfirmingDeletion = false
@@ -34,7 +35,7 @@ struct StoreEditor: View {
         _distanceText = State(initialValue: store.distanceKm > 0
             ? distance.value.formatted(.number.precision(.fractionLength(0...1)))
             : "")
-        _coordinate = State(initialValue: store.coordinate)
+        _place = State(initialValue: store.place)
     }
 
     private var trimmedName: String { ProductName.display(name) }
@@ -98,20 +99,17 @@ struct StoreEditor: View {
                 .onSurface()
 
                 Section {
-                    if let coordinate {
-                        Map(position: .constant(.region(MKCoordinateRegion(
-                            center: coordinate, latitudinalMeters: 400, longitudinalMeters: 400
-                        ))), interactionModes: []) {
-                            Marker(trimmedName, systemImage: "storefront", coordinate: coordinate)
-                                .tint(ListAppearance.color(named: colorName))
-                        }
-                        .frame(height: 160)
-                        .listRowInsets(EdgeInsets())
-                        Button("Change Location…") { isPickingLocation = true }
-                        Button("Remove Location", role: .destructive) { self.coordinate = nil }
-                    } else {
-                        Button("Set Location…", systemImage: "mappin.and.ellipse") { isPickingLocation = true }
+                    Map(position: .constant(.region(MKCoordinateRegion(
+                        center: place.coordinate, latitudinalMeters: 400, longitudinalMeters: 400
+                    ))), interactionModes: []) {
+                        Marker(trimmedName, systemImage: "storefront", coordinate: place.coordinate)
+                            .tint(ListAppearance.color(named: colorName))
                     }
+                    .frame(height: 160)
+                    .listRowInsets(EdgeInsets())
+                    Text(place.fullAddress)
+                        .foregroundStyle(Color.ink)
+                    Button("Change Location…") { isPickingLocation = true }
                     Toggle("Start Shopping When I Arrive", isOn: Binding(
                         get: { noticesArrivals },
                         set: { enabled in Task { await StoreArrivalMonitor.shared.setEnabled(enabled) } }
@@ -120,7 +118,7 @@ struct StoreEditor: View {
                 } header: {
                     Text("Location")
                 } footer: {
-                    Text("When you arrive at a shop with a location, Budget & Buy gets your list ready to shop there and lets you know. Applies to all your shops. Your location is only checked on your iPhone.")
+                    Text("When you arrive at one of your shops, Budget & Buy gets your list ready to shop there and lets you know. Applies to all your shops. Your location is only checked on your iPhone.")
                 }
                 .onSurface()
 
@@ -137,8 +135,8 @@ struct StoreEditor: View {
                 Text("This also deletes every price recorded there.")
             }
             .sheet(isPresented: $isPickingLocation) {
-                StoreLocationPicker(storeName: trimmedName, initial: coordinate) { picked in
-                    coordinate = picked
+                ShopLocationSheet(storeName: trimmedName, place: place) { picked in
+                    place = picked
                 }
             }
             .navigationTitle("Edit Shop")
@@ -163,7 +161,7 @@ struct StoreEditor: View {
         target.travel = travel
         target.travelMinutes = Int16(minutes)
         target.distanceKm = distanceKm
-        target.coordinate = coordinate
+        if place != target.place { target.place = place }
         context.saveIfNeeded()
         Task { await StoreArrivalMonitor.shared.refresh() }
         dismiss()

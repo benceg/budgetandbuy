@@ -75,6 +75,12 @@ private struct ShopChoiceRow: View {
                 Text(option.store.name ?? "")
                     .font(.headline)
                     .foregroundStyle(Color.ink)
+                if let address = option.store.address {
+                    Text(address)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.inkSecondary)
+                        .lineLimit(1)
+                }
                 HStack(spacing: 6) {
                     Text("\(Image(systemName: option.store.travel.symbolName)) \(option.store.journey)")
                         .foregroundStyle(Color.inkSecondary)

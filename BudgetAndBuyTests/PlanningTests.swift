@@ -101,10 +101,4 @@ struct PlanningTests {
         #expect(BudgetProgress(spentMinor: 6_000, budgetMinor: 0).fraction == 0)
         #expect(!BudgetProgress(spentMinor: 6_000, budgetMinor: 0).isOver)
     }
-
-    @Test func shopNamesKeepTheBrand() {
-        #expect(ShopSetupView.shortName("Aldi Bermondsey") == "Aldi")
-        #expect(ShopSetupView.shortName("Tesco Express") == "Tesco")
-        #expect(ShopSetupView.shortName("Bermondsey Local") == "Bermondsey Local")
-    }
 }

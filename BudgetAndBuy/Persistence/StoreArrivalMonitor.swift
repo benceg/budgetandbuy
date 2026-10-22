@@ -30,12 +30,11 @@ final class StoreArrivalMonitor {
         await refresh()
     }
 
-    /// Watches every store with a location, or nothing when switched off.
+    /// Watches every store, or nothing when switched off.
     /// Call on launch, including background launches for an arrival, and
     /// whenever stores change.
     func refresh() async {
         let request = NSFetchRequest<Store>(entityName: "Store")
-        request.predicate = NSPredicate(format: "hasLocation == YES")
         request.sortDescriptors = Store.oldestFirst
         let stores = (try? PersistenceController.shared.viewContext.fetch(request)) ?? []
 
@@ -50,8 +49,8 @@ final class StoreArrivalMonitor {
         let monitor = await currentMonitor()
         var wanted: [String: CLMonitor.CircularGeographicCondition] = [:]
         for store in stores.prefix(Self.limit) {
-            guard let id = store.uuid?.uuidString, let coordinate = store.coordinate else { continue }
-            wanted[id] = CLMonitor.CircularGeographicCondition(center: coordinate, radius: Self.radius)
+            guard let id = store.uuid?.uuidString else { continue }
+            wanted[id] = CLMonitor.CircularGeographicCondition(center: store.coordinate, radius: Self.radius)
         }
         for id in await monitor.identifiers where wanted[id] == nil {
             await monitor.remove(id)

@@ -114,19 +114,22 @@ struct ShopDetailView: View {
 
     private var header: some View {
         VStack(spacing: 0) {
-            if let coordinate = store.coordinate {
-                Map(initialPosition: .region(MKCoordinateRegion(center: coordinate, latitudinalMeters: 700, longitudinalMeters: 700)), interactionModes: []) {
-                    Marker(store.name ?? "", monogram: Text(String((store.name ?? "").prefix(1))), coordinate: coordinate)
-                        .tint(store.color)
-                }
-                .frame(height: 140)
+            Map(initialPosition: .region(MKCoordinateRegion(center: store.coordinate, latitudinalMeters: 700, longitudinalMeters: 700)), interactionModes: []) {
+                Marker(store.name ?? "", monogram: Text(String((store.name ?? "").prefix(1))), coordinate: store.coordinate)
+                    .tint(store.color)
             }
+            .frame(height: 140)
             HStack(spacing: 14) {
                 StoreBadge(store: store, size: 56)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(store.name ?? "")
                         .font(.title2.bold())
                         .foregroundStyle(Color.ink)
+                    if let fullAddress = store.fullAddress {
+                        Text(fullAddress)
+                            .font(.subheadline)
+                            .foregroundStyle(Color.inkSecondary)
+                    }
                     Text("\(Image(systemName: store.travel.symbolName)) \(store.journey)")
                         .foregroundStyle(Color.inkSecondary)
                     if store.distanceKm > 0 {

@@ -188,6 +188,7 @@ private struct ShopsStep: View {
     @State private var query = ""
     @State private var adding: Set<MKMapItem> = []
     @State private var namingShop: ShopChoice?
+    @State private var editing: Store?
 
     init(household: Household, next: @escaping () -> Void) {
         self.household = household
@@ -204,16 +205,29 @@ private struct ShopsStep: View {
             if !stores.isEmpty {
                 FlowLayout(spacing: 8) {
                     ForEach(stores, id: \.objectID) { store in
-                        HStack(spacing: 6) {
-                            StoreBadge(store: store, size: 24)
-                            Text(store.name ?? "")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(Color.ink)
+                        Button {
+                            editing = store
+                        } label: {
+                            HStack(spacing: 6) {
+                                StoreBadge(store: store, size: 24)
+                                Text(store.name ?? "")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Color.ink)
+                                // Two shops with the same name need their addresses to tell them apart.
+                                if store.sharesName(with: stores), let address = store.address {
+                                    Text(address)
+                                        .font(.subheadline)
+                                        .foregroundStyle(Color.inkSecondary)
+                                        .lineLimit(1)
+                                }
+                            }
+                            .padding(.leading, 4)
+                            .padding(.trailing, 12)
+                            .padding(.vertical, 4)
+                            .background(Color.surface, in: .capsule)
                         }
-                        .padding(.leading, 4)
-                        .padding(.trailing, 12)
-                        .padding(.vertical, 4)
-                        .background(Color.surface, in: .capsule)
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Edit the shop")
                     }
                 }
             }
@@ -253,7 +267,7 @@ private struct ShopsStep: View {
                     Button {
                         namingShop = ShopChoice(name: query)
                     } label: {
-                        Label("Add “\(query)” by name", systemImage: "plus.circle")
+                        Label("Add “\(query)” as a new shop", systemImage: "plus.circle")
                             .foregroundStyle(Color.brandInk)
                             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     }
@@ -284,6 +298,9 @@ private struct ShopsStep: View {
                 }
             }
         }
+        .sheet(item: $editing) { store in
+            StoreEditor(store: store)
+        }
     }
 
     private var placeholder: LocalizedStringResource {
@@ -295,27 +312,23 @@ private struct ShopsStep: View {
     }
 
     private func isAdded(_ place: MKMapItem) -> Bool {
-        stores.contains { store in
-            guard let coordinate = store.coordinate else { return false }
-            return CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude).distance(from: place.location) < 30
-        }
+        household.store(at: ShopPlace(place)) != nil
     }
 
-    /// Adds a shop in one tap, with the likely way of getting there.
+    /// Adds a shop in one tap, with the name Maps gives it and the likely way
+    /// of getting there. A shop you already have isn't added again.
     private func quickAdd(_ place: MKMapItem) async {
         guard !isAdded(place), !adding.contains(place) else { return }
         adding.insert(place)
         defer { adding.remove(place) }
         let mode = finder.likelyMode(to: place)
         let journey = await finder.journey(to: place, by: mode)
-        let used = Set(stores.compactMap(\.colorName))
-        let store = household.addStore()
-        store.name = ShopSetupView.shortName(place.name ?? "")
-        store.colorName = ListAppearance.colorNames.first { !used.contains($0) } ?? "slate"
+        guard !isAdded(place) else { return }
+        let shopPlace = ShopPlace(place)
+        let store = household.addStore(named: shopPlace.name, at: shopPlace)
         store.travel = mode
         store.travelMinutes = Int16(journey?.minutes ?? 10)
         store.distanceKm = journey?.kilometres ?? 0
-        store.coordinate = place.location.coordinate
         context.saveIfNeeded()
     }
 }
@@ -337,7 +350,7 @@ private struct PlaceAddRow: View {
                 Text(place.name ?? "")
                     .font(.body.weight(.medium))
                     .foregroundStyle(Color.ink)
-                Text([place.shortAddress, distance.map { Measurement(value: $0, unit: UnitLength.meters).formatted(.measurement(width: .abbreviated, usage: .road)) }]
+                Text([ShopPlace(place).address, distance.map { Measurement(value: $0, unit: UnitLength.meters).formatted(.measurement(width: .abbreviated, usage: .road)) }]
                     .compactMap(\.self).joined(separator: " · "))
                     .font(.caption)
                     .foregroundStyle(Color.inkSecondary)

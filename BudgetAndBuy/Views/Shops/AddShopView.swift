@@ -28,8 +28,12 @@ struct AddShopView: View {
             if !places.isEmpty {
                 Section {
                     ForEach(places, id: \.self) { place in
-                        Button { chosen = ShopChoice(place: place) } label: {
-                            PlaceRow(place: place, distance: finder.distance(to: place))
+                        Button { chosen = ShopChoice(item: place) } label: {
+                            PlaceRow(
+                                place: place,
+                                distance: finder.distance(to: place),
+                                isAdded: household.store(at: ShopPlace(place)) != nil
+                            )
                         }
                         .buttonStyle(.plain)
                     }
@@ -52,11 +56,11 @@ struct AddShopView: View {
                 Button {
                     chosen = ShopChoice(name: query)
                 } label: {
-                    Label(query.isEmpty ? "Add a Shop by Name" : "Add “\(query)” by Name", systemImage: "character.cursor.ibeam")
+                    Label(query.isEmpty ? "Add a Shop That Isn’t Listed" : "Add “\(query)” as a New Shop", systemImage: "plus.circle")
                         .foregroundStyle(Color.brandInk)
                 }
             } footer: {
-                Text("Without a location, you’ll enter the journey yourself, and the app can’t tell when you arrive.")
+                Text("Name it, then find its address or place it on the map.")
                     .foregroundStyle(Color.inkSecondary)
             }
             .onSurface()
@@ -106,18 +110,18 @@ struct AddShopView: View {
     }
 }
 
-/// A shop picked from Maps, or one to enter by name.
+/// A shop picked from Maps, or a new one that starts with a name.
 struct ShopChoice: Hashable {
-    let place: MKMapItem?
+    let item: MKMapItem?
     let name: String
 
-    init(place: MKMapItem) {
-        self.place = place
-        name = place.name ?? ""
+    init(item: MKMapItem) {
+        self.item = item
+        name = item.name ?? ""
     }
 
     init(name: String) {
-        place = nil
+        item = nil
         self.name = name
     }
 }
@@ -125,6 +129,7 @@ struct ShopChoice: Hashable {
 private struct PlaceRow: View {
     let place: MKMapItem
     let distance: CLLocationDistance?
+    let isAdded: Bool
 
     var body: some View {
         HStack(spacing: 12) {
@@ -133,7 +138,8 @@ private struct PlaceRow: View {
                 Text(place.name ?? "")
                     .font(.headline)
                     .foregroundStyle(Color.ink)
-                if let address = place.shortAddress {
+                let address = ShopPlace(place).address
+                if !address.isEmpty {
                     Text(address)
                         .font(.subheadline)
                         .foregroundStyle(Color.inkSecondary)
@@ -141,7 +147,11 @@ private struct PlaceRow: View {
                 }
             }
             Spacer()
-            if let distance {
+            if isAdded {
+                Label("Added", systemImage: "checkmark")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.brandInk)
+            } else if let distance {
                 Text(Measurement(value: distance, unit: UnitLength.meters), format: .measurement(width: .abbreviated, usage: .road))
                     .font(.subheadline)
                     .monospacedDigit()
@@ -153,8 +163,9 @@ private struct PlaceRow: View {
     }
 }
 
-/// Names the shop and settles how you get there, with the journey worked out
-/// by Maps where it can be.
+/// Names the shop and settles where it is and how you get there. A shop
+/// from Maps already has its address; a new one needs one found or placed
+/// on the map.
 struct ShopSetupView: View {
     let household: Household
     let choice: ShopChoice
@@ -164,6 +175,7 @@ struct ShopSetupView: View {
     @Environment(\.managedObjectContext) private var context
     @State private var name: String
     @State private var colorName: String
+    @State private var place: ShopPlace?
     @State private var travel: TravelMode
     @State private var minutes = 10
     @State private var kilometres: Double = 0
@@ -174,10 +186,10 @@ struct ShopSetupView: View {
         self.choice = choice
         self.finder = finder
         self.onAdded = onAdded
-        _name = State(initialValue: ShopSetupView.shortName(choice.name))
-        let used = Set((household.stores ?? []).compactMap(\.colorName))
-        _colorName = State(initialValue: ListAppearance.colorNames.first { !used.contains($0) } ?? "slate")
-        _travel = State(initialValue: choice.place.map(finder.likelyMode(to:)) ?? .drive)
+        _name = State(initialValue: choice.name)
+        _colorName = State(initialValue: household.nextStoreColorName)
+        _place = State(initialValue: choice.item.map { ShopPlace($0) })
+        _travel = State(initialValue: choice.item.map(finder.likelyMode(to:)) ?? .drive)
     }
 
     private var trimmedName: String { ProductName.display(name) }
@@ -194,20 +206,31 @@ struct ShopSetupView: View {
                         .padding(.vertical, 12)
                         .background(Color.sunken, in: .rect(cornerRadius: 14))
                         .submitLabel(.done)
-                    if let address = choice.place?.shortAddress {
-                        Text(address)
+                    if choice.item != nil, let place {
+                        Text(place.fullAddress)
                             .font(.subheadline)
                             .foregroundStyle(Color.inkSecondary)
+                            .multilineTextAlignment(.center)
                     }
                     colours
                 }
                 .card()
 
+                if choice.item == nil {
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("Where is it?")
+                            .font(.headline)
+                            .foregroundStyle(Color.ink)
+                        ShopLocationChooser(place: $place, startingQuery: choice.name)
+                    }
+                    .card()
+                }
+
                 journey
 
-                if let place = choice.place {
-                    Map(initialPosition: .region(MKCoordinateRegion(center: place.location.coordinate, latitudinalMeters: 600, longitudinalMeters: 600)), interactionModes: []) {
-                        Marker(trimmedName, coordinate: place.location.coordinate)
+                if choice.item != nil, let place {
+                    Map(initialPosition: .region(MKCoordinateRegion(center: place.coordinate, latitudinalMeters: 600, longitudinalMeters: 600)), interactionModes: []) {
+                        Marker(trimmedName, coordinate: place.coordinate)
                             .tint(ListAppearance.color(named: colorName))
                     }
                     .frame(height: 150)
@@ -216,14 +239,16 @@ struct ShopSetupView: View {
 
                 Button("Add Shop", action: save)
                     .buttonStyle(.primary)
-                    .disabled(trimmedName.isEmpty)
+                    .disabled(trimmedName.isEmpty || place == nil)
             }
             .padding()
         }
+        .scrollDismissesKeyboard(.interactively)
         .canvasBackground()
         .navigationTitle("New Shop")
         .navigationBarTitleDisplayMode(.inline)
         .task(id: travel) { await estimate() }
+        .onChange(of: place) { Task { await estimate() } }
     }
 
     private var colours: some View {
@@ -263,30 +288,29 @@ struct ShopSetupView: View {
     }
 
     private func estimate() async {
-        guard let place = choice.place, let journey = await finder.journey(to: place, by: travel) else { return }
+        guard let place else { return }
+        let item = choice.item ?? MKMapItem(location: place.location, address: nil)
+        guard let journey = await finder.journey(to: item, by: travel) else { return }
         minutes = journey.minutes
         kilometres = journey.kilometres
         isEstimated = true
     }
 
+    /// Adds the shop, unless you already have one there: then nothing
+    /// changes, and it carries on as if it had been added.
     private func save() {
-        guard !trimmedName.isEmpty else { return }
-        let store = household.addStore()
-        store.name = trimmedName
-        store.colorName = colorName
+        guard !trimmedName.isEmpty, let place else { return }
+        if let existing = household.store(at: place) {
+            onAdded(existing)
+            return
+        }
+        let store = household.addStore(named: trimmedName, at: place, colorName: colorName)
         store.travel = travel
         store.travelMinutes = Int16(minutes)
         store.distanceKm = kilometres
-        store.coordinate = choice.place?.location.coordinate
         context.saveIfNeeded()
         Task { await StoreArrivalMonitor.shared.refresh() }
         onAdded(store)
-    }
-
-    /// "Aldi Bermondsey" is most likely just "Aldi" to you; keep the brand.
-    static func shortName(_ name: String) -> String {
-        let brands = ["Aldi", "Lidl", "Tesco", "Sainsbury’s", "Sainsbury's", "Asda", "Morrisons", "Waitrose", "Co-op", "Iceland", "M&S", "Marks & Spencer", "Boots", "Superdrug", "Spar", "Costco", "Ocado", "Home Bargains", "B&M", "Poundland"]
-        return brands.first { name.localizedStandardRange(of: $0)?.lowerBound == name.startIndex } ?? name
     }
 }
 

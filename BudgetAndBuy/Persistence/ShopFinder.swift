@@ -143,9 +143,35 @@ extension TravelMode {
     }
 }
 
-extension MKMapItem {
-    /// A short address, such as "12 High Street, Bermondsey".
-    var shortAddress: String? {
-        address?.shortAddress ?? addressRepresentations?.cityName
+extension ShopPlace {
+    /// A place found in Maps, with its name and identifier.
+    init(_ item: MKMapItem) {
+        self.init(address: item)
+        name = item.name ?? ""
+        placeID = item.identifier?.rawValue
+    }
+
+    /// Only where an item is: for an address found by hand, which has no
+    /// name of its own and isn't a place in Maps.
+    init(address item: MKMapItem) {
+        let full = item.addressRepresentations?.fullAddress(includingRegion: false, singleLine: true)
+            ?? item.address?.fullAddress ?? ""
+        let short = item.address?.shortAddress ?? item.addressRepresentations?.cityWithContext ?? full
+        self.init(name: "", address: short, fullAddress: full, placeID: nil,
+                  latitude: item.location.coordinate.latitude, longitude: item.location.coordinate.longitude)
+    }
+
+    /// The address at a point on the map, or nil if Maps hasn't one, such as
+    /// in the middle of a field.
+    static func lookUp(_ coordinate: CLLocationCoordinate2D) async -> ShopPlace? {
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        guard let request = MKReverseGeocodingRequest(location: location),
+              let item = try? await request.mapItems.first else { return nil }
+        var place = ShopPlace(address: item)
+        guard !place.fullAddress.isEmpty else { return nil }
+        // Keep the point that was chosen, not the middle of the address Maps found.
+        place.latitude = coordinate.latitude
+        place.longitude = coordinate.longitude
+        return place
     }
 }

@@ -51,13 +51,12 @@ extension Store {
 
     var journey: String { travel.journey(minutes: travelMinutes) }
 
-    var coordinate: CLLocationCoordinate2D? {
-        get { hasLocation ? CLLocationCoordinate2D(latitude: latitude, longitude: longitude) : nil }
-        set {
-            hasLocation = newValue != nil
-            latitude = newValue?.latitude ?? 0
-            longitude = newValue?.longitude ?? 0
-        }
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+
+    var location: CLLocation {
+        CLLocation(latitude: latitude, longitude: longitude)
     }
 
     /// The newest price for each product sold here.

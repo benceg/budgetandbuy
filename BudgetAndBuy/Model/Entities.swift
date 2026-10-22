@@ -91,7 +91,11 @@ final class Store: NSManagedObject, Timestamped {
     @NSManaged var travelMode: String?
     @NSManaged var travelMinutes: Int16
     @NSManaged var distanceKm: Double
-    @NSManaged var hasLocation: Bool
+    /// The short address shown under the name, such as "200 Brighton Road, Coulsdon".
+    @NSManaged var address: String?
+    @NSManaged var fullAddress: String?
+    /// Maps' identifier for the place, when the shop was found in Maps.
+    @NSManaged var placeID: String?
     @NSManaged var latitude: Double
     @NSManaged var longitude: Double
     @NSManaged var household: Household?

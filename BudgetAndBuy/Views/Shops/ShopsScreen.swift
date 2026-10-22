@@ -93,24 +93,22 @@ struct ShopsScreen: View {
             }
             .onSurface()
 
-            if stores.contains(where: \.hasLocation) {
-                Section {
-                    Toggle(isOn: Binding(
-                        get: { noticesArrivals },
-                        set: { enabled in Task { await StoreArrivalMonitor.shared.setEnabled(enabled) } }
-                    )) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Start shopping when I arrive")
-                                .foregroundStyle(Color.ink)
-                            Text("Your iPhone notices when you reach one of these shops and gets your list ready. Your location stays on your iPhone.")
-                                .font(.footnote)
-                                .foregroundStyle(Color.inkSecondary)
-                        }
+            Section {
+                Toggle(isOn: Binding(
+                    get: { noticesArrivals },
+                    set: { enabled in Task { await StoreArrivalMonitor.shared.setEnabled(enabled) } }
+                )) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Start shopping when I arrive")
+                            .foregroundStyle(Color.ink)
+                        Text("Your iPhone notices when you reach one of these shops and gets your list ready. Your location stays on your iPhone.")
+                            .font(.footnote)
+                            .foregroundStyle(Color.inkSecondary)
                     }
-                    .tint(.brand)
                 }
-                .onSurface()
+                .tint(.brand)
             }
+            .onSurface()
         }
         .themedList()
     }
@@ -141,6 +139,12 @@ private struct ShopRow: View {
                 Text(store.name ?? "")
                     .font(.headline)
                     .foregroundStyle(Color.ink)
+                if let address = store.address {
+                    Text(address)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.inkSecondary)
+                        .lineLimit(1)
+                }
                 Text("\(Image(systemName: store.travel.symbolName)) \(store.journey) · \(priceSummary)")
                     .font(.subheadline)
                     .foregroundStyle(Color.inkSecondary)
