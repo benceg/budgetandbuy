@@ -2,8 +2,8 @@ import CoreData
 import MapKit
 import SwiftUI
 
-/// A shop: where it is, how you get there, every price seen there, and
-/// what it doesn't sell.
+/// A shop: where it is, how long it takes to get there, every price seen
+/// there, and what it doesn't sell.
 struct ShopDetailView: View {
     @ObservedObject var store: Store
     @Environment(\.managedObjectContext) private var context
@@ -130,13 +130,9 @@ struct ShopDetailView: View {
                             .font(.subheadline)
                             .foregroundStyle(Color.inkSecondary)
                     }
-                    Text("\(Image(systemName: store.travel.symbolName)) \(store.journey)")
+                    ShopJourney(store: store)
+                        .font(.subheadline)
                         .foregroundStyle(Color.inkSecondary)
-                    if store.distanceKm > 0 {
-                        Text(Measurement(value: store.distanceKm, unit: UnitLength.kilometers), format: .measurement(width: .abbreviated, usage: .road))
-                            .font(.subheadline)
-                            .foregroundStyle(Color.inkSecondary)
-                    }
                 }
                 Spacer()
             }

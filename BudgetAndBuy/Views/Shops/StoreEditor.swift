@@ -2,8 +2,8 @@ import CoreData
 import MapKit
 import SwiftUI
 
-/// Edits a shop's name, colour, location and how you get there. Any shop can
-/// be renamed: two can share a name, told apart by their addresses.
+/// Edits a shop's name, colour and location. Any shop can be renamed: two
+/// can share a name, told apart by their addresses.
 struct StoreEditor: View {
     private let store: Store
     private let onDelete: () -> Void
@@ -12,39 +12,20 @@ struct StoreEditor: View {
     @Environment(\.managedObjectContext) private var context
     @State private var name: String
     @State private var colorName: String
-    @State private var travel: TravelMode
-    @State private var minutes: Int
-    @State private var distanceText: String
     @State private var place: ShopPlace
     @State private var isPickingLocation = false
     @AppStorage(StoreArrivalMonitor.enabledKey) private var noticesArrivals = false
     @State private var isConfirmingDeletion = false
-
-    /// Distances are stored in kilometres but entered in the local road unit.
-    private static let distanceUnit: UnitLength =
-        Locale.current.measurementSystem == .metric ? .kilometers : .miles
 
     init(store: Store, onDelete: @escaping () -> Void = {}) {
         self.store = store
         self.onDelete = onDelete
         _name = State(initialValue: store.name ?? "")
         _colorName = State(initialValue: store.colorName ?? "slate")
-        _travel = State(initialValue: store.travel)
-        _minutes = State(initialValue: Int(store.travelMinutes))
-        let distance = Measurement(value: store.distanceKm, unit: UnitLength.kilometers).converted(to: Self.distanceUnit)
-        _distanceText = State(initialValue: store.distanceKm > 0
-            ? distance.value.formatted(.number.precision(.fractionLength(0...1)))
-            : "")
         _place = State(initialValue: store.place)
     }
 
     private var trimmedName: String { ProductName.display(name) }
-
-    private var distanceKm: Double {
-        let separator = Locale.current.decimalSeparator ?? "."
-        let value = Double(distanceText.replacingOccurrences(of: separator, with: ".")) ?? 0
-        return Measurement(value: max(0, value), unit: Self.distanceUnit).converted(to: .kilometers).value
-    }
 
     var body: some View {
         NavigationStack {
@@ -71,30 +52,6 @@ struct StoreEditor: View {
                             .fill(ListAppearance.color(named: name))
                             .accessibilityLabel(ListAppearance.title(named: name))
                     }
-                }
-                .onSurface()
-
-                Section {
-                    ChipPicker(options: TravelMode.allCases.map { ($0, $0.shortTitle) }, selection: $travel)
-                        .listRowSeparator(.hidden)
-
-                    Stepper(value: $minutes, in: 1...240) {
-                        LabeledContent("Journey Time", value: String(localized: "\(minutes) min"))
-                    }
-
-                    LabeledContent("Distance") {
-                        HStack(spacing: 4) {
-                            TextField("Optional", text: $distanceText)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                            Text(Self.distanceUnit.symbol)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                } header: {
-                    Text("Getting There")
-                } footer: {
-                    Text("From home, one way. Used to weigh up savings against the trip.")
                 }
                 .onSurface()
 
@@ -158,9 +115,6 @@ struct StoreEditor: View {
         let target = store
         target.name = trimmedName
         target.colorName = colorName
-        target.travel = travel
-        target.travelMinutes = Int16(minutes)
-        target.distanceKm = distanceKm
         if place != target.place { target.place = place }
         context.saveIfNeeded()
         Task { await StoreArrivalMonitor.shared.refresh() }

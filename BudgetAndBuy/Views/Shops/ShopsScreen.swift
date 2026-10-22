@@ -76,6 +76,14 @@ struct ShopsScreen: View {
 
     private var shopList: some View {
         List {
+            if Journeys.shared.access != .allowed {
+                Section {
+                    LocationBanner()
+                        .padding(.vertical, 4)
+                }
+                .onSurface()
+            }
+
             Section {
                 ForEach(stores, id: \.objectID) { store in
                     NavigationLink(value: store) {
@@ -145,9 +153,12 @@ private struct ShopRow: View {
                         .foregroundStyle(Color.inkSecondary)
                         .lineLimit(1)
                 }
-                Text("\(Image(systemName: store.travel.symbolName)) \(store.journey) · \(priceSummary)")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.inkSecondary)
+                HStack(spacing: 4) {
+                    ShopJourney(store: store)
+                    Text("· \(priceSummary)")
+                }
+                .font(.subheadline)
+                .foregroundStyle(Color.inkSecondary)
             }
         }
         .padding(.vertical, 6)

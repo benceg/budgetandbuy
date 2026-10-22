@@ -240,8 +240,6 @@ struct ShoppingListTests {
         let mine = household
         let store = mine.addStore()
         store.name = "Aldi"
-        store.travel = .walk
-        store.travelMinutes = 7
         store.recordPrice(145, for: mine.product(named: "Milk"))
 
         let joined = Household.create(in: context)
@@ -251,8 +249,6 @@ struct ShoppingListTests {
         #expect(mine.stores?.isEmpty ?? true)
         let moved = try #require(joined.stores?.first)
         #expect(moved.name == "Aldi")
-        #expect(moved.travel == .walk)
-        #expect(moved.travelMinutes == 7)
         let milk = try #require(joined.products?.first)
         #expect(milk.latestPrice(at: moved)?.amountMinor == 145)
     }

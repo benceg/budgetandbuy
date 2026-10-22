@@ -1,4 +1,5 @@
 import CoreData
+import CoreLocation
 import Testing
 @testable import BudgetAndBuy
 
@@ -9,18 +10,19 @@ struct StoreComparisonTests {
     let coop: Store
     let aldi: Store
     let list: ShoppingList
+    /// Round the corner from the Co-op, and a drive from Aldi.
+    let here = CLLocation(latitude: 51.501, longitude: -0.1)
 
     init() {
         household = persistence.ensureHousehold()
         coop = household.addStore()
         coop.name = "Co-op"
-        coop.travel = .walk
-        coop.travelMinutes = 4
+        coop.latitude = 51.5
+        coop.longitude = -0.1
         aldi = household.addStore()
         aldi.name = "Aldi"
-        aldi.travel = .drive
-        aldi.travelMinutes = 20
-        aldi.distanceKm = 14
+        aldi.latitude = 51.6
+        aldi.longitude = -0.1
         list = household.addList()
     }
 
@@ -38,7 +40,7 @@ struct StoreComparisonTests {
             item("Bread", coop: 250, aldi: 129),
             item("Saffron", coop: 300),
         ]
-        let comparison = StoreComparison(items: items, stores: [aldi, coop])
+        let comparison = StoreComparison(items: items, stores: [aldi, coop], origin: here)
 
         #expect(comparison.nearest == coop)
         #expect(comparison.options.map(\.store) == [coop, aldi])
@@ -52,8 +54,22 @@ struct StoreComparisonTests {
         let coopOnCommonItems: Int64 = 175 * 2 + 250
         #expect(saving.amountMinor == coopOnCommonItems - aldiTotal)
         #expect(saving.commonCount == 2)
-        #expect(saving.extraMinutes == 16)
         #expect(comparison.bestSaving?.option.store == aldi)
+    }
+
+    @Test func nearestIsWhereverYouAre() {
+        let byAldi = CLLocation(latitude: 51.599, longitude: -0.1)
+        #expect(StoreComparison(items: [], stores: [aldi, coop], origin: byAldi).nearest == aldi)
+    }
+
+    @Test func noNearestStoreOrSavingsWithoutYourLocation() {
+        let items = [item("Milk", coop: 175, aldi: 145)]
+        let comparison = StoreComparison(items: items, stores: [aldi, coop])
+        #expect(comparison.nearest == nil)
+        #expect(comparison.saving(at: aldi) == nil)
+        #expect(comparison.bestSaving == nil)
+        // What things cost still works.
+        #expect(comparison.options.first?.store == aldi)
     }
 
     @Test func splitsTheShopWhenTwoStoresBeatOne() throws {
@@ -93,7 +109,7 @@ struct StoreComparisonTests {
 
     @Test func noSavingWhenNothingIsCheaper() {
         let items = [item("Milk", coop: 145, aldi: 175)]
-        let comparison = StoreComparison(items: items, stores: [aldi, coop])
+        let comparison = StoreComparison(items: items, stores: [aldi, coop], origin: here)
         #expect(comparison.saving(at: aldi)?.amountMinor == -30)
         #expect(comparison.bestSaving == nil)
     }

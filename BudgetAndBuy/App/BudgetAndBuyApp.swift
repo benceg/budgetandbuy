@@ -60,6 +60,7 @@ struct RootView: View {
     @AppStorage("selectedHouseholdID") private var selectedID = ""
     @AppStorage(OnboardingView.completedKey) private var hasCompletedOnboarding = false
     @AppStorage(AppTheme.storageKey) private var theme: AppTheme = .sage
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         Group {
@@ -87,6 +88,10 @@ struct RootView: View {
         #endif
         .task {
             ProductCategorizer.shared.categorizeAll(in: context)
+        }
+        // You may have moved, or turned Location on or off in Settings.
+        .onChange(of: scenePhase) {
+            if scenePhase == .active { Task { await Journeys.shared.locate() } }
         }
     }
 }

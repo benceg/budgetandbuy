@@ -11,7 +11,7 @@ struct StartShoppingSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        let comparison = StoreComparison(items: items, stores: stores)
+        let comparison = StoreComparison(items: items, stores: stores, origin: Journeys.shared.location)
         let cheapest = comparison.options.first { $0.pricedCount > 0 }?.store
         NavigationStack {
             List {
@@ -82,7 +82,7 @@ private struct ShopChoiceRow: View {
                         .lineLimit(1)
                 }
                 HStack(spacing: 6) {
-                    Text("\(Image(systemName: option.store.travel.symbolName)) \(option.store.journey)")
+                    ShopJourney(store: option.store)
                         .foregroundStyle(Color.inkSecondary)
                     if isCheapest { Tag(text: String(localized: "Cheapest"), foreground: .brandInk, background: .brandPale) }
                     if isClosest { Tag(text: String(localized: "Closest")) }

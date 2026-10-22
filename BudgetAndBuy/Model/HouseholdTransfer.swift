@@ -37,9 +37,6 @@ extension Household {
             storeCopies[store.objectID] = copy
             copy.name = store.name
             copy.colorName = store.colorName
-            copy.travelMode = store.travelMode
-            copy.travelMinutes = store.travelMinutes
-            copy.distanceKm = store.distanceKm
             copy.place = store.place
             for price in store.prices ?? [] {
                 guard let product = price.product.flatMap({ copies[$0.objectID] }) else { continue }
@@ -83,9 +80,6 @@ extension Household {
             let copy = addStore()
             copy.name = store.name
             copy.colorName = store.colorName
-            copy.travelMode = store.travelMode
-            copy.travelMinutes = store.travelMinutes
-            copy.distanceKm = store.distanceKm
             copy.place = store.place
             guard includingPrices else { continue }
             for price in (store.prices ?? []).sorted(by: Price.isOlder) {

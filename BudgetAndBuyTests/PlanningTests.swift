@@ -1,4 +1,5 @@
 import CoreData
+import CoreLocation
 import Testing
 @testable import BudgetAndBuy
 
@@ -7,17 +8,20 @@ struct PlanningTests {
     let persistence = PersistenceController(inMemory: true)
     var household: Household { persistence.ensureHousehold() }
 
+    /// Round the corner from the Co-op.
+    let here = CLLocation(latitude: 51.501, longitude: -0.1)
+
     /// A cheap store a drive away, a dear one round the corner, and a list
     /// where each is cheaper for something.
     private func shop() throws -> (list: ShoppingList, far: Store, near: Store) {
         let far = household.addStore()
         far.name = "Aldi"
-        far.travelMinutes = 20
-        far.distanceKm = 10
+        far.latitude = 51.6
+        far.longitude = -0.1
         let near = household.addStore()
         near.name = "Co-op"
-        near.travel = .walk
-        near.travelMinutes = 4
+        near.latitude = 51.5
+        near.longitude = -0.1
         let list = household.addList()
         let milk = try #require(list.addItem(named: "Milk")?.product)
         let bread = try #require(list.addItem(named: "Bread")?.product)
@@ -34,10 +38,18 @@ struct PlanningTests {
         let (list, far, near) = try shop()
         let comparison = StoreComparison(items: Array(list.items ?? []), stores: [far, near])
         let plan = try #require(ShoppingPlan(goal: .cheapest, comparison: comparison))
-        #expect(plan.stops.map(\.store) == [near, far])
+        #expect(Set(plan.stops.map(\.store)) == [near, far])
         #expect(plan.totalMinor == 120 + 600 + 145)
         #expect(plan.pricedCount == 3)
-        #expect(plan.travelMinutes == 24)
+    }
+
+    @Test func routesStartAtTheShopNearestYou() throws {
+        let (list, far, near) = try shop()
+        let byAldi = CLLocation(latitude: 51.599, longitude: -0.1)
+        let fromAldi = StoreComparison(items: Array(list.items ?? []), stores: [far, near], origin: byAldi)
+        #expect(ShoppingPlan(goal: .cheapest, comparison: fromAldi)?.stops.map(\.store) == [far, near])
+        let fromCoop = StoreComparison(items: Array(list.items ?? []), stores: [far, near], origin: here)
+        #expect(ShoppingPlan(goal: .cheapest, comparison: fromCoop)?.stops.map(\.store) == [near, far])
     }
 
     @Test func oneStopUsesTheStoreThatCoversMost() throws {
@@ -50,9 +62,15 @@ struct PlanningTests {
 
     @Test func closestUsesTheNearestStore() throws {
         let (list, far, near) = try shop()
-        let comparison = StoreComparison(items: Array(list.items ?? []), stores: [far, near])
+        let comparison = StoreComparison(items: Array(list.items ?? []), stores: [far, near], origin: here)
         let plan = try #require(ShoppingPlan(goal: .closest, comparison: comparison))
         #expect(plan.stops.map(\.store) == [near])
+    }
+
+    @Test func noClosestPlanWithoutYourLocation() throws {
+        let (list, far, near) = try shop()
+        let comparison = StoreComparison(items: Array(list.items ?? []), stores: [far, near])
+        #expect(ShoppingPlan(goal: .closest, comparison: comparison) == nil)
     }
 
     @Test func noPlanWithoutPrices() {

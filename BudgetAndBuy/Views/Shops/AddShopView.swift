@@ -85,7 +85,7 @@ struct AddShopView: View {
             }
         }
         .navigationDestination(item: $chosen) { choice in
-            ShopSetupView(household: household, choice: choice, finder: finder, onAdded: onAdded)
+            ShopSetupView(household: household, choice: choice, onAdded: onAdded)
         }
     }
 
@@ -163,33 +163,25 @@ private struct PlaceRow: View {
     }
 }
 
-/// Names the shop and settles where it is and how you get there. A shop
-/// from Maps already has its address; a new one needs one found or placed
-/// on the map.
+/// Names the shop and settles where it is. A shop from Maps already has its
+/// address; a new one needs one found or placed on the map.
 struct ShopSetupView: View {
     let household: Household
     let choice: ShopChoice
-    let finder: ShopFinder
     let onAdded: (Store) -> Void
 
     @Environment(\.managedObjectContext) private var context
     @State private var name: String
     @State private var colorName: String
     @State private var place: ShopPlace?
-    @State private var travel: TravelMode
-    @State private var minutes = 10
-    @State private var kilometres: Double = 0
-    @State private var isEstimated = false
 
-    init(household: Household, choice: ShopChoice, finder: ShopFinder, onAdded: @escaping (Store) -> Void) {
+    init(household: Household, choice: ShopChoice, onAdded: @escaping (Store) -> Void) {
         self.household = household
         self.choice = choice
-        self.finder = finder
         self.onAdded = onAdded
         _name = State(initialValue: choice.name)
         _colorName = State(initialValue: household.nextStoreColorName)
         _place = State(initialValue: choice.item.map { ShopPlace($0) })
-        _travel = State(initialValue: choice.item.map(finder.likelyMode(to:)) ?? .drive)
     }
 
     private var trimmedName: String { ProductName.display(name) }
@@ -226,8 +218,6 @@ struct ShopSetupView: View {
                     .card()
                 }
 
-                journey
-
                 if choice.item != nil, let place {
                     Map(initialPosition: .region(MKCoordinateRegion(center: place.coordinate, latitudinalMeters: 600, longitudinalMeters: 600)), interactionModes: []) {
                         Marker(trimmedName, coordinate: place.coordinate)
@@ -247,8 +237,6 @@ struct ShopSetupView: View {
         .canvasBackground()
         .navigationTitle("New Shop")
         .navigationBarTitleDisplayMode(.inline)
-        .task(id: travel) { await estimate() }
-        .onChange(of: place) { Task { await estimate() } }
     }
 
     private var colours: some View {
@@ -257,43 +245,6 @@ struct ShopSetupView: View {
                 .fill(ListAppearance.color(named: name))
                 .accessibilityLabel(ListAppearance.title(named: name))
         }
-    }
-
-    private var journey: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("How do you usually get there?")
-                .font(.headline)
-                .foregroundStyle(Color.ink)
-            ChipPicker(options: TravelMode.allCases.map { ($0, $0.shortTitle) }, selection: $travel)
-            Stepper(value: $minutes, in: 1...240) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(travel.journey(minutes: Int16(minutes)))
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(Color.ink)
-                    if kilometres > 0 {
-                        Text(Measurement(value: kilometres, unit: UnitLength.kilometers), format: .measurement(width: .abbreviated, usage: .road))
-                            .font(.subheadline)
-                            .foregroundStyle(Color.inkSecondary)
-                    }
-                }
-            }
-            Text(isEstimated
-                 ? "Worked out from where you are now. Adjust it if you usually set off from somewhere else."
-                 : "One way, from home. It’s weighed against what a shop saves you.")
-                .font(.footnote)
-                .foregroundStyle(Color.inkSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .card()
-    }
-
-    private func estimate() async {
-        guard let place else { return }
-        let item = choice.item ?? MKMapItem(location: place.location, address: nil)
-        guard let journey = await finder.journey(to: item, by: travel) else { return }
-        minutes = journey.minutes
-        kilometres = journey.kilometres
-        isEstimated = true
     }
 
     /// Adds the shop, unless you already have one there: then nothing
@@ -305,22 +256,8 @@ struct ShopSetupView: View {
             return
         }
         let store = household.addStore(named: trimmedName, at: place, colorName: colorName)
-        store.travel = travel
-        store.travelMinutes = Int16(minutes)
-        store.distanceKm = kilometres
         context.saveIfNeeded()
         Task { await StoreArrivalMonitor.shared.refresh() }
         onAdded(store)
-    }
-}
-
-extension TravelMode {
-    var shortTitle: LocalizedStringResource {
-        switch self {
-        case .walk: "Walk"
-        case .cycle: "Cycle"
-        case .drive: "Drive"
-        case .transit: "Bus"
-        }
     }
 }

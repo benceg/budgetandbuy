@@ -3,7 +3,7 @@ import MapKit
 import SwiftUI
 
 /// Where to buy the list: the cheapest way, the one-stop way and the closest
-/// way, with what each costs in money and time.
+/// way, with what each costs, and the route between the shops from where you are.
 struct PlanPage: View {
     @ObservedObject var list: ShoppingList
     let items: [Item]
@@ -12,9 +12,10 @@ struct PlanPage: View {
 
     @State private var goal: ShoppingPlan.Goal = .cheapest
     @State private var isAddingShop = false
+    private var journeys: Journeys { .shared }
 
     var body: some View {
-        let comparison = StoreComparison(items: items, stores: stores)
+        let comparison = StoreComparison(items: items, stores: stores, origin: journeys.location)
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 if stores.isEmpty {
@@ -36,6 +37,7 @@ struct PlanPage: View {
             .padding()
         }
         .canvasBackground()
+        .task { await journeys.locate() }
         #if DEBUG
         .onAppear {
             if let debugGoal = DebugLaunch.goal { goal = debugGoal }
@@ -59,30 +61,30 @@ struct PlanPage: View {
         .card()
     }
 
+    /// Closest needs to know where you are.
+    private func goals(_ comparison: StoreComparison) -> [ShoppingPlan.Goal] {
+        ShoppingPlan.Goal.allCases.filter { $0 != .closest || comparison.nearest != nil }
+    }
+
     @ViewBuilder
     private func content(_ comparison: StoreComparison) -> some View {
+        if journeys.access != .allowed {
+            LocationBanner(message: "See how far each shop is, which is nearest, and the best way round them.")
+                .card()
+        }
+
         if let best = comparison.bestSaving, let nearest = comparison.nearest {
             InsightCard(saving: best.saving, store: best.option.store, nearest: nearest)
         }
 
+        let goals = goals(comparison)
         if stores.count > 1 {
-            ChipPicker(options: ShoppingPlan.Goal.allCases.map { ($0, $0.title) }, selection: $goal)
+            ChipPicker(options: goals.map { ($0, $0.title) }, selection: $goal)
         }
 
-        if let plan = ShoppingPlan(goal: stores.count > 1 ? goal : .fewestStops, comparison: comparison) {
-            PlanSummary(plan: plan)
-            ForEach(Array(plan.stops.enumerated()), id: \.element.id) { index, stop in
-                StopCard(number: plan.stops.count > 1 ? index + 1 : nil, stop: stop)
-            }
-            RouteMap(stops: plan.stops, stores: stores)
-            if let first = plan.stops.first {
-                Button {
-                    onStartShopping(first.store)
-                } label: {
-                    Label("Start Shopping at \(first.store.name ?? "")", systemImage: "basket")
-                }
-                .buttonStyle(.primary)
-            }
+        let chosen = stores.count == 1 ? .fewestStops : goals.contains(goal) ? goal : .cheapest
+        if let plan = ShoppingPlan(goal: chosen, comparison: comparison) {
+            RouteSection(plan: plan, stores: stores, onStartShopping: onStartShopping)
         } else {
             Text("None of these shops has prices for things on this list yet.")
                 .font(.subheadline)
@@ -113,6 +115,7 @@ private struct InsightCard: View {
     let saving: StoreComparison.Saving
     let store: Store
     let nearest: Store
+    private var journeys: Journeys { .shared }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -131,21 +134,82 @@ private struct InsightCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.brand, in: .rect(cornerRadius: 22, style: .continuous))
         .accessibilityElement(children: .combine)
+        .task(id: JourneyKey(location: journeys.location, store: store)) {
+            await journeys.load(to: [nearest, store])
+        }
     }
 
     private var detail: String {
         let things = saving.commonCount == 1
             ? String(localized: "the 1 thing priced at both")
             : String(localized: "the \(saving.commonCount) things priced at both")
-        if saving.extraMinutes > 0 {
-            return String(localized: "\(store.travel.journey(minutes: Int16(saving.extraMinutes))) further than \(nearest.name ?? ""), on \(things).")
+        let nearestName = nearest.name ?? ""
+        guard let there = journeys.fromHere(to: store), let nearby = journeys.fromHere(to: nearest) else {
+            return String(localized: "Compared with \(nearestName), your nearest shop, on \(things).")
         }
-        return String(localized: "Compared with \(nearest.name ?? ""), on \(things), and it’s no further away.")
+        let extra = there.driveMinutes - nearby.driveMinutes
+        if extra > 0 {
+            return String(localized: "\(Journey.format(minutes: extra)) further by car than \(nearestName), on \(things).")
+        }
+        return String(localized: "Compared with \(nearestName), on \(things), and it’s no further away.")
     }
+}
+
+/// The plan's stops in the order to visit them, each with the leg that gets
+/// you there, and the map.
+private struct RouteSection: View {
+    let plan: ShoppingPlan
+    let stores: [Store]
+    let onStartShopping: (Store) -> Void
+    private var journeys: Journeys { .shared }
+
+    /// The leg to each stop: from you to the first, then from stop to stop.
+    private var legs: [Journey?] {
+        plan.stops.indices.map { index in
+            index == 0
+                ? journeys.location.flatMap { _ in journeys.fromHere(to: plan.stops[0].store) }
+                : journeys.between(plan.stops[index - 1].store, and: plan.stops[index].store)
+        }
+    }
+
+    var body: some View {
+        let legs = legs
+        let total = legs.allSatisfy { $0 != nil } ? legs.compactMap(\.self).reduce(Journey(driveMinutes: 0, walkMinutes: 0), +) : nil
+        PlanSummary(plan: plan, total: total)
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(Array(plan.stops.enumerated()), id: \.element.id) { index, stop in
+                LegRow(
+                    from: index == 0 ? nil : plan.stops[index - 1].store.name,
+                    leg: legs[index],
+                    isLocationOff: index == 0 && journeys.access != .allowed
+                )
+                StopCard(number: plan.stops.count > 1 ? index + 1 : nil, stop: stop)
+            }
+        }
+        RouteMap(stops: plan.stops, stores: stores)
+            .task(id: RouteKey(location: journeys.location, stops: plan.stops.map(\.id))) {
+                await journeys.load(route: plan.stops.map(\.store))
+            }
+        if let first = plan.stops.first {
+            Button {
+                onStartShopping(first.store)
+            } label: {
+                Label("Start Shopping at \(first.store.name ?? "")", systemImage: "basket")
+            }
+            .buttonStyle(.primary)
+        }
+    }
+}
+
+private struct RouteKey: Hashable {
+    let location: CLLocation?
+    let stops: [NSManagedObjectID]
 }
 
 private struct PlanSummary: View {
     let plan: ShoppingPlan
+    /// The whole route, once every leg is known.
+    let total: Journey?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -156,21 +220,47 @@ private struct PlanSummary: View {
                 Spacer()
                 HeroAmount(minorUnits: plan.totalMinor, size: 28)
             }
-            Text(details)
+            Text(plan.pricedCount == plan.itemCount
+                 ? String(localized: "All \(plan.itemCount) items")
+                 : String(localized: "\(plan.pricedCount) of \(plan.itemCount) items priced"))
                 .font(.subheadline)
-            .foregroundStyle(Color.inkSecondary)
+                .foregroundStyle(Color.inkSecondary)
+            if let total {
+                Text("\(Image(systemName: "car")) \(Journey.format(minutes: total.driveMinutes)) or \(Image(systemName: "figure.walk")) \(Journey.format(minutes: total.walkMinutes)) in total")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.inkSecondary)
+                    .accessibilityLabel("\(Journey.format(minutes: total.driveMinutes)) by car or \(Journey.format(minutes: total.walkMinutes)) on foot in total")
+            }
         }
         .card()
         .accessibilityElement(children: .combine)
     }
+}
 
-    private var details: String {
-        [
-            plan.pricedCount == plan.itemCount
-                ? String(localized: "All \(plan.itemCount) items")
-                : String(localized: "\(plan.pricedCount) of \(plan.itemCount) items priced"),
-            String(localized: "\(plan.travelMinutes) min travel"),
-        ].joined(separator: " · ")
+/// How you get to the next stop: from where you are, or from the shop before.
+private struct LegRow: View {
+    /// The shop before, or nil when you set off from where you are.
+    let from: String?
+    let leg: Journey?
+    let isLocationOff: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "arrow.down")
+                .accessibilityHidden(true)
+            if isLocationOff {
+                Text("Turn on Location to see the way there")
+            } else {
+                Text(from.map { String(localized: "From \($0)") } ?? String(localized: "From you"))
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                JourneyLabel(journey: leg)
+            }
+        }
+        .font(.subheadline)
+        .foregroundStyle(Color.inkSecondary)
+        .padding(.horizontal, 16)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -203,9 +293,6 @@ private struct StopCard: View {
                                 .foregroundStyle(Color.inkSecondary)
                                 .lineLimit(1)
                         }
-                        Text("\(Image(systemName: stop.store.travel.symbolName)) \(stop.store.journey)")
-                            .font(.subheadline)
-                            .foregroundStyle(Color.inkSecondary)
                     }
                     Spacer()
                     VStack(alignment: .trailing, spacing: 2) {
@@ -327,13 +414,7 @@ private struct RouteMap: View {
         guard let stop = stops.first else { return }
         let item = MKMapItem(location: stop.store.location, address: nil)
         item.name = stop.store.name
-        let mode: String = switch stop.store.travel {
-        case .walk: MKLaunchOptionsDirectionsModeWalking
-        case .cycle: MKLaunchOptionsDirectionsModeCycling
-        case .transit: MKLaunchOptionsDirectionsModeTransit
-        case .drive: MKLaunchOptionsDirectionsModeDriving
-        }
-        item.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: mode])
+        item.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDefault])
     }
 }
 

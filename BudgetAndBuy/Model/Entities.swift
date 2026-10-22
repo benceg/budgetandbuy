@@ -88,9 +88,6 @@ final class Store: NSManagedObject, Timestamped {
     @NSManaged var createdAt: Date?
     @NSManaged var name: String?
     @NSManaged var colorName: String?
-    @NSManaged var travelMode: String?
-    @NSManaged var travelMinutes: Int16
-    @NSManaged var distanceKm: Double
     /// The short address shown under the name, such as "200 Brighton Road, Coulsdon".
     @NSManaged var address: String?
     @NSManaged var fullAddress: String?

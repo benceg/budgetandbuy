@@ -55,10 +55,9 @@ struct HouseholdTests {
 
     @Test func copyingShopsCanBringPricesAndWhatIsNotSold() throws {
         let home = persistence.ensureHousehold()
-        let aldi = home.addStore()
-        aldi.name = "Aldi"
-        aldi.travel = .walk
-        aldi.travelMinutes = 7
+        let aldi = home.addStore(named: "Aldi", at: ShopPlace(
+            name: "Aldi", address: "Lion Green Road, Coulsdon", fullAddress: "Lion Green Road, Coulsdon, CR5 2NL",
+            placeID: "A", latitude: 51.32, longitude: -0.14))
         let milk = home.product(named: "Milk", size: ProductSize(amount: 2, unit: .litres))
         milk.category = .dairyAndEggs
         aldi.recordPrice(145, for: milk, on: .now.addingTimeInterval(-86_400))
@@ -69,8 +68,9 @@ struct HouseholdTests {
         withPrices.copyShops(from: home, includingPrices: true)
         let copiedAldi = try #require(withPrices.stores?.first)
         #expect(copiedAldi.name == "Aldi")
-        #expect(copiedAldi.travel == .walk)
-        #expect(copiedAldi.travelMinutes == 7)
+        #expect(copiedAldi.fullAddress == "Lion Green Road, Coulsdon, CR5 2NL")
+        #expect(copiedAldi.placeID == "A")
+        #expect(copiedAldi.latitude == 51.32)
         let copiedMilk = try #require(withPrices.products?.first { $0.name == "Milk" })
         #expect(copiedMilk.size == ProductSize(amount: 2, unit: .litres))
         #expect(copiedMilk.category == .dairyAndEggs)

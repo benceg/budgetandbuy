@@ -9,9 +9,6 @@ enum ExampleData {
     struct Shop {
         let name: String
         let colorName: String
-        let travel: TravelMode
-        let minutes: Int16
-        let kilometres: Double
         /// Roughly where it is; refined from Maps when seeding.
         let coordinate: CLLocationCoordinate2D
         let area: String
@@ -19,13 +16,13 @@ enum ExampleData {
         let priceLevel: Double
     }
 
-    static let aldi = Shop(name: "Aldi Coulsdon", colorName: "slate", travel: .drive, minutes: 6, kilometres: 2.2,
+    static let aldi = Shop(name: "Aldi Coulsdon", colorName: "slate",
                            coordinate: CLLocationCoordinate2D(latitude: 51.3265, longitude: -0.1368), area: "Coulsdon", priceLevel: 0.82)
-    static let sainsburys = Shop(name: "Sainsbury’s Warlingham", colorName: "apricot", travel: .drive, minutes: 15, kilometres: 6.8,
+    static let sainsburys = Shop(name: "Sainsbury’s Warlingham", colorName: "apricot",
                                  coordinate: CLLocationCoordinate2D(latitude: 51.3177, longitude: -0.0640), area: "Warlingham", priceLevel: 1.0)
-    static let tesco = Shop(name: "Tesco Express Coulsdon", colorName: "coral", travel: .walk, minutes: 5, kilometres: 0.4,
+    static let tesco = Shop(name: "Tesco Express Coulsdon", colorName: "coral",
                             coordinate: CLLocationCoordinate2D(latitude: 51.3196, longitude: -0.1392), area: "Coulsdon", priceLevel: 1.14)
-    static let waitrose = Shop(name: "Waitrose Coulsdon", colorName: "olive", travel: .walk, minutes: 8, kilometres: 0.6,
+    static let waitrose = Shop(name: "Waitrose Coulsdon", colorName: "olive",
                                coordinate: CLLocationCoordinate2D(latitude: 51.3188, longitude: -0.1381), area: "Coulsdon", priceLevel: 1.27)
 
     static let shops = [aldi, sainsburys, tesco, waitrose]
@@ -102,9 +99,6 @@ enum ExampleData {
             let store = existing.first { $0.name == shop.name } ?? household.addStore()
             store.name = shop.name
             store.colorName = shop.colorName
-            store.travel = shop.travel
-            store.travelMinutes = shop.minutes
-            store.distanceKm = shop.kilometres
             if store.fullAddress == nil {
                 store.place = ShopPlace(name: shop.name, address: shop.area, fullAddress: shop.area, placeID: nil,
                                         latitude: shop.coordinate.latitude, longitude: shop.coordinate.longitude)

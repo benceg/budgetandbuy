@@ -32,10 +32,9 @@ struct ShoppingPlan {
     var totalMinor: Int64 { stops.reduce(0) { $0 + $1.totalMinor } }
     var pricedCount: Int { stops.reduce(0) { $0 + $1.items.count } }
 
-    /// One-way journey time to every stop, added up.
-    var travelMinutes: Int { stops.reduce(0) { $0 + Int($1.store.travelMinutes) } }
 
     /// The plan for a goal, or nil when no store has a price for anything.
+    /// Stops are in the order to visit them, starting nearest to you.
     init?(goal: Goal, comparison: StoreComparison) {
         var stops: [Stop] = []
         if goal == .cheapest, let split = comparison.split {
@@ -47,8 +46,9 @@ struct ShoppingPlan {
             stops = [Stop(store: store, items: comparison.pricedItems(at: store), totalMinor: comparison.option(for: store)?.totalMinor ?? 0)]
         }
         guard stops.contains(where: { !$0.items.isEmpty }) else { return nil }
+        let route = Route.order(stops.map(\.store), from: comparison.origin)
         self.goal = goal
-        self.stops = stops
+        self.stops = route.compactMap { store in stops.first { $0.store == store } }
         itemCount = comparison.itemCount
     }
 

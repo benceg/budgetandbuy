@@ -186,7 +186,6 @@ private struct ShopsStep: View {
     @FetchRequest private var stores: FetchedResults<Store>
     @State private var finder = ShopFinder()
     @State private var query = ""
-    @State private var adding: Set<MKMapItem> = []
     @State private var namingShop: ShopChoice?
     @State private var editing: Store?
 
@@ -253,10 +252,9 @@ private struct ShopsStep: View {
                     PlaceAddRow(
                         place: place,
                         distance: finder.distance(to: place),
-                        isAdded: isAdded(place),
-                        isAdding: adding.contains(place)
+                        isAdded: isAdded(place)
                     ) {
-                        Task { await quickAdd(place) }
+                        quickAdd(place)
                     }
                     if place != places.last {
                         Divider().overlay(Color.hairline)
@@ -292,7 +290,7 @@ private struct ShopsStep: View {
         }
         .sheet(item: $namingShop) { choice in
             NavigationStack {
-                ShopSetupView(household: household, choice: choice, finder: finder) { _ in
+                ShopSetupView(household: household, choice: choice) { _ in
                     namingShop = nil
                     query = ""
                 }
@@ -306,7 +304,7 @@ private struct ShopsStep: View {
     private var placeholder: LocalizedStringResource {
         switch finder.access {
         case .denied: "Location is off, so search for your shops by name."
-        case .unknown: "Finding shops near you…"
+        case .notAsked: "Finding shops near you…"
         case .allowed: query.isEmpty ? "Looking for shops nearby…" : "No matching shops nearby."
         }
     }
@@ -315,20 +313,11 @@ private struct ShopsStep: View {
         household.store(at: ShopPlace(place)) != nil
     }
 
-    /// Adds a shop in one tap, with the name Maps gives it and the likely way
-    /// of getting there. A shop you already have isn't added again.
-    private func quickAdd(_ place: MKMapItem) async {
-        guard !isAdded(place), !adding.contains(place) else { return }
-        adding.insert(place)
-        defer { adding.remove(place) }
-        let mode = finder.likelyMode(to: place)
-        let journey = await finder.journey(to: place, by: mode)
-        guard !isAdded(place) else { return }
+    /// Adds a shop in one tap, with the name Maps gives it. A shop you
+    /// already have isn't added again.
+    private func quickAdd(_ place: MKMapItem) {
         let shopPlace = ShopPlace(place)
-        let store = household.addStore(named: shopPlace.name, at: shopPlace)
-        store.travel = mode
-        store.travelMinutes = Int16(journey?.minutes ?? 10)
-        store.distanceKm = journey?.kilometres ?? 0
+        household.addStore(named: shopPlace.name, at: shopPlace)
         context.saveIfNeeded()
     }
 }
@@ -341,7 +330,6 @@ private struct PlaceAddRow: View {
     let place: MKMapItem
     let distance: CLLocationDistance?
     let isAdded: Bool
-    let isAdding: Bool
     let add: () -> Void
 
     var body: some View {
@@ -357,9 +345,7 @@ private struct PlaceAddRow: View {
                     .lineLimit(1)
             }
             Spacer()
-            if isAdding {
-                ProgressView()
-            } else if isAdded {
+            if isAdded {
                 Label("Added", systemImage: "checkmark")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.brandInk)

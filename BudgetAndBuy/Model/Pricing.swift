@@ -2,39 +2,6 @@ import CoreData
 import CoreLocation
 import Foundation
 
-enum TravelMode: String, CaseIterable, Identifiable {
-    case walk, cycle, drive, transit
-
-    var id: Self { self }
-
-    var title: LocalizedStringResource {
-        switch self {
-        case .walk: "Walk"
-        case .cycle: "Cycle"
-        case .drive: "Drive"
-        case .transit: "Transit"
-        }
-    }
-
-    var symbolName: String {
-        switch self {
-        case .walk: "figure.walk"
-        case .cycle: "bicycle"
-        case .drive: "car"
-        case .transit: "bus"
-        }
-    }
-
-    func journey(minutes: Int16) -> String {
-        switch self {
-        case .walk: String(localized: "\(minutes) min walk")
-        case .cycle: String(localized: "\(minutes) min cycle")
-        case .drive: String(localized: "\(minutes) min drive")
-        case .transit: String(localized: "\(minutes) min by public transport")
-        }
-    }
-}
-
 extension Household {
     func addStore() -> Store {
         let store = insertRelated(Store.self)
@@ -44,13 +11,6 @@ extension Household {
 }
 
 extension Store {
-    var travel: TravelMode {
-        get { travelMode.flatMap(TravelMode.init(rawValue:)) ?? .drive }
-        set { travelMode = newValue.rawValue }
-    }
-
-    var journey: String { travel.journey(minutes: travelMinutes) }
-
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }

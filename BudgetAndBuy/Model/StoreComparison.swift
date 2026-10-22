@@ -1,12 +1,14 @@
 import CoreData
+import CoreLocation
 import Foundation
 
 /// Compares what a set of items costs at each of the household's stores.
 ///
 /// Stores rarely have prices for everything, so every figure says which items
 /// it covers, and savings are only claimed on items priced at both stores
-/// being compared. Savings are measured against the nearest store: the one
-/// you'd shop at if the trip were all that mattered.
+/// being compared. Savings are measured against the store nearest to you:
+/// the one you'd shop at if the trip were all that mattered. Without your
+/// location there's no nearest store, and no savings.
 struct StoreComparison {
     struct Option: Identifiable {
         let store: Store
@@ -21,8 +23,6 @@ struct StoreComparison {
         /// Positive when the store is cheaper than the nearest one.
         let amountMinor: Int64
         let commonCount: Int
-        /// One way, compared with the nearest store.
-        let extraMinutes: Int
     }
 
     /// Buying each item wherever it's cheaper across two stores.
@@ -43,6 +43,8 @@ struct StoreComparison {
     var itemCount: Int { items.count }
     /// Stores with prices for the most items first, then the cheapest.
     let options: [Option]
+    /// Where you are, if your location is on.
+    let origin: CLLocation?
     let nearest: Store?
     let split: Split?
     /// Items with no price at any store.
@@ -51,7 +53,7 @@ struct StoreComparison {
 
     private let costs: [NSManagedObjectID: [NSManagedObjectID: Int64]]
 
-    init(items: [Item], stores: [Store]) {
+    init(items: [Item], stores: [Store], origin: CLLocation? = nil) {
         self.items = items
         self.stores = stores
 
@@ -84,9 +86,8 @@ struct StoreComparison {
             return (lhs.store.name ?? "").localizedStandardCompare(rhs.store.name ?? "") == .orderedAscending
         }
 
-        nearest = stores.min {
-            ($0.travelMinutes, $0.name ?? "") < ($1.travelMinutes, $1.name ?? "")
-        }
+        self.origin = origin
+        nearest = Route.nearest(stores, to: origin)
         unpriced = items.filter { item in !costs.values.contains { $0[item.objectID] != nil } }
         split = Self.bestSplit(items: items, stores: stores, costs: costs, bestSingle: self.options.first)
     }
@@ -99,8 +100,7 @@ struct StoreComparison {
         guard !common.isEmpty else { return nil }
         return Saving(
             amountMinor: common.reduce(0) { $0 + nearestCosts[$1]! - theirs[$1]! },
-            commonCount: common.count,
-            extraMinutes: Int(store.travelMinutes) - Int(nearest.travelMinutes)
+            commonCount: common.count
         )
     }
 

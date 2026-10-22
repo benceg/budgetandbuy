@@ -176,16 +176,11 @@ extension PersistenceController {
         let aldi = household.addStore()
         aldi.name = "Aldi"
         aldi.colorName = "slate"
-        aldi.travelMinutes = 20
-        aldi.distanceKm = 14
         aldi.place = ShopPlace(name: "Aldi", address: "Rotherhithe New Road, Bermondsey", fullAddress: "Rotherhithe New Road, Bermondsey, London",
                                placeID: nil, latitude: 51.4881, longitude: -0.0489)
         let coop = household.addStore()
         coop.name = "Co-op"
         coop.colorName = "sea"
-        coop.travel = .walk
-        coop.travelMinutes = 4
-        coop.distanceKm = 0.3
         coop.place = ShopPlace(name: "Co-op", address: "Jamaica Road, Bermondsey", fullAddress: "Jamaica Road, Bermondsey, London",
                                placeID: nil, latitude: 51.4985, longitude: -0.0627)
         for (name, aldiPrice, coopPrice) in [
